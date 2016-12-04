@@ -18,13 +18,13 @@ class Camera{
             return Point( float(x)/Width, float(y)/Height ) * (Rightbottom - Lefttop) + Lefttop;
         }
 
-        cv::Mat render(Point O, Render& home){
+        cv::Mat render(Point O, Render& home, int depth = 10){
             cv::Mat image(w, h, CV_8UC3, cv::Scalar(0, 0, 0));
             cv::Mat_<cv::Vec3b> _m = image;
             for(int i = 0; i<w; ++i){
                 for(int j = 0; j<h; ++j){
                     Point direction = startRay(i + 0.5, j + 0.5, w, h);
-                    Color color = home.rayTrace(make_pair(O, O + direction), 2, 1., 1.);
+                    Color color = home.rayTrace(make_pair(O, O + direction), depth, 1., 1.);
                     _m(j, i) = cv::Vec<unsigned char, 3>(color.x, color.y, color.z);
                 }
             }

@@ -2,6 +2,7 @@
 #define INLCUDESHAPE
 #include<vector>
 #include<cmath>
+#include<iostream>
 #include "assert.h"
 #include "basic.cpp"
 using namespace std;
@@ -13,11 +14,11 @@ public:
     float reflect_value;
     float transmit_value, eta2;
     Point norm, interp;
+    Point color;
 
     virtual int intersection(const Line& ray, Point& p) = 0;
     virtual void calc_norm(const Line& ray, const Point& p) = 0;
     virtual Color local(const Line& ray) = 0;
-
     Point calc_transmit(const Point& a, const Point& n, float eta){
         float c1 = dianji(a, n)/a.norm()/n.norm();
         float c2 = sqrt(1- 1/(eta*eta) * (1-c1*c1));
@@ -43,11 +44,17 @@ public:
             calc_norm(ray, interp);
             transmittedRay = make_pair(interp, calc_transmit(ray.first - interp, norm, eta2/eta1) );
         }
-        return 0;
+        return transmit_value;
     }
+
     void set_reflect_value(float a){
         reflect_value = a;
     }
+
+    void set_color(const Point& a){
+        color = a;
+    }
+
 
     void set_transmit_val(float a){
         transmit_value = a;
@@ -80,11 +87,9 @@ public:
     Point O;
     //a, b record the points of intersection of last ray
     float Radius, a, b;
-    Color color;
     Ball(const Point& _O, const float& _Radius, const float& _eta = 0)
         :O(_O), Radius(_Radius){
         eta2 = _eta;
-        color = Color(255, 255, 255);
     }
 
     int intersection(const Line& ray, Point& output){

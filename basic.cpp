@@ -123,6 +123,7 @@ ostream& operator << (ostream& a, const Point& b){
     return a;
 }
 
+
 Point chaji(const Point& a, const Point& b){
     return Point(a.x * b.y - a.y * b.x, a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z);
 }
@@ -182,6 +183,11 @@ int intersectionBall(const Line& ray, const Point& O, const float& Radius, float
     a = (mid - d)/length;
     b = (mid + d)/length;
     return 1;
+}
+
+ostream& operator << (ostream& a, const Line& b){
+    a<<"Line("<<b.first<<","<<b.second<<")";
+    return a;
 }
 
 #endif
