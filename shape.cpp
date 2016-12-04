@@ -14,9 +14,9 @@ public:
     float transmit_value, eta2;
     Point norm, interp;
 
-    virtual int intersection(const Line& ray, const Point& p);
-    virtual void calc_norm(const Line& ray, const Point& p);
-    virtual Color local(const Line& ray);
+    virtual int intersection(const Line& ray, Point& p) = 0;
+    virtual void calc_norm(const Line& ray, const Point& p) = 0;
+    virtual Color local(const Line& ray) = 0;
 
     Point calc_transmit(const Point& a, const Point& n, float eta){
         float c1 = dianji(a, n)/a.norm()/n.norm();
@@ -29,11 +29,11 @@ public:
         return 2*dianji(a, n) * n - a;
     }
 
-    float reflect(const Line& ray, Line& relectRay){
+    float reflect(const Line& ray, Line& reflectRay){
         if(reflect_value!=0){
             intersection(ray, interp);
             calc_norm(ray, interp);
-            relectRay = make_pair( interp, calc_reflect(ray.first - interp, norm) );
+            reflectRay = make_pair( interp, calc_reflect(ray.first - interp, norm) );
         }
         return reflect_value;
     }
@@ -44,6 +44,13 @@ public:
             transmittedRay = make_pair(interp, calc_transmit(ray.first - interp, norm, eta2/eta1) );
         }
         return 0;
+    }
+    void set_reflect_value(float a){
+        reflect_value = a;
+    }
+
+    void set_transmit_val(float a){
+        transmit_value = a;
     }
 };
 
@@ -73,8 +80,11 @@ public:
     Point O;
     //a, b record the points of intersection of last ray
     float Radius, a, b;
-    Ball(const Point& _O, const float& _Radius, const float& _eta = 0):O(_O), Radius(_Radius){
+    Color color;
+    Ball(const Point& _O, const float& _Radius, const float& _eta = 0)
+        :O(_O), Radius(_Radius){
         eta2 = _eta;
+        color = Color(255, 255, 255);
     }
 
     int intersection(const Line& ray, Point& output){
@@ -95,6 +105,8 @@ public:
         norm/= norm.norm();
     }
 
-    virtual Color local(const Line& ray);
+    Color local(const Line& ray){
+        return color;
+    }
 };
 #endif

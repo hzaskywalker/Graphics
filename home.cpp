@@ -1,16 +1,23 @@
+#ifndef INCLUDEHOME
+#define INCLUDEHOME
 #include "shape.cpp"
 typedef Point Color;
 const float INF = 1e10;
 class Render{
 public:
-    vector<Object> objs;
+    vector<Object*> objs;
     Color background;
 
-    int findIntersection(Line ray, Point& interp, Object& surface){
+    void addObj(Object& a){
+        printf("haha\n");
+        objs.push_back(&a);
+    }
+
+    int findIntersection(Line ray, Point& interp, Object* surface){
         float d = INF;
         Point tmp;
-        for(vector<Object>::iterator it=objs.begin();it!=objs.end();++it){
-            if(it->intersection(ray, tmp)){
+        for(vector<Object*>::iterator it=objs.begin();it!=objs.end();++it){
+            if((*it)->intersection(ray, tmp)){
                 float val = dist(ray.first, tmp);
                 if(val < d){
                     val = d;
@@ -27,15 +34,15 @@ public:
             return Color(0, 0, 0);
         }
         Point p;
-        Object surface;
+        Object* surface;
         if( findIntersection(ray, p, surface) ){
-            Color color = surface.local(ray);
+            Color color = surface->local(ray);
             Line tmp;
             float wt, wr;
-            if((wr = surface.reflect(ray, tmp))>eps)
+            if((wr = surface->reflect(ray, tmp))>eps)
                 color += rayTrace(tmp, depth - 1, weight, eta) * wr;
-            if((wt = surface.transmit(ray, tmp, eta))>eps)
-                color += rayTrace(tmp, depth - 1, weight, (eta==1?surface.eta2:1)) * wt;
+            if((wt = surface->transmit(ray, tmp, eta))>eps)
+                color += rayTrace(tmp, depth - 1, weight, (eta==1?surface->eta2:1)) * wt;
             return color;
         }
         else
@@ -45,5 +52,5 @@ public:
     Render(){
         background = Color(255, 255, 255);
     }
-
 };
+#endif
