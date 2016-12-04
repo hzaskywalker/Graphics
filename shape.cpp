@@ -19,10 +19,13 @@ public:
     virtual int intersection(const Line& ray, Point& p) = 0;
     virtual void calc_norm(const Line& ray, const Point& p) = 0;
     virtual Color local(const Line& ray) = 0;
-    Point calc_transmit(const Point& a, const Point& n, float eta){
+    int calc_transmit(const Point& a, const Point& n, float eta, Point& p){
         float c1 = dianji(a, n)/a.norm()/n.norm();
+        if(1-c1*c1>eta*eta)
+            return 0;
         float c2 = sqrt(1- 1/(eta*eta) * (1-c1*c1));
-        return -1/eta * a - (c2 - 1/eta * c1) * n;
+        p = -1/eta * a - (c2 - 1/eta * c1) * n;
+        return 1;
     }
 
     Point calc_reflect(const Point& a, const Point& n){
@@ -42,9 +45,13 @@ public:
         if(eta2 != 0){
             intersection(ray, interp);
             calc_norm(ray, interp);
-            transmittedRay = make_pair(interp, calc_transmit(ray.first - interp, norm, eta2/eta1) );
+            Point aim;
+            if( calc_transmit(ray.first - interp, norm, eta2/eta1, aim) ){
+                transmittedRay = make_pair(interp,  aim + interp);
+                return transmit_value;
+            }
         }
-        return transmit_value;
+        return 0;
     }
 
     void set_reflect_value(float a){
@@ -100,7 +107,7 @@ public:
             swap(a, b);
         if(max(a, b)<eps)
             return 0;
-        interp = ray.first + (ray.second - ray.first) * (a<0?b:a);
+        interp = ray.first + (ray.second - ray.first) * (a<eps?b:a);
         output = interp;
         return 1;
     }

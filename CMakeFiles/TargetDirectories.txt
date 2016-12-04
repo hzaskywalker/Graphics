@@ -1,0 +1,3 @@
+/Users/hza/Note/Graphics/Work2/CMakeFiles/edit_cache.dir
+/Users/hza/Note/Graphics/Work2/CMakeFiles/rebuild_cache.dir
+/Users/hza/Note/Graphics/Work2/CMakeFiles/main.dir

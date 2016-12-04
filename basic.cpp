@@ -5,7 +5,7 @@
 #include<cmath>
 typedef float ld;
 using namespace std;
-ld eps = 1e-10;
+ld eps = 1e-4;
 class Point{
     public:
         ld x, y, z;
@@ -180,8 +180,8 @@ int intersectionBall(const Line& ray, const Point& O, const float& Radius, float
         return 0;
     }
     float l = sqrt(Radius * Radius - d*d);
-    a = (mid - d)/length;
-    b = (mid + d)/length;
+    a = (mid - l)/length;
+    b = (mid + l)/length;
     return 1;
 }
 
