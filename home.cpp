@@ -3,77 +3,93 @@
 #include "shape.cpp"
 #include<iostream>
 typedef Point Color;
-const float INF = 1e10;
+const double INF = 1e10;
 
-class LightSource{
-    public:
-        Point p;
-        Color color;
-        LightSource(Point a, Color b):p(a), color(b){}
-};
+Color localLight(
+        const Object* obj, const Point& v,
+        const Point& p, Point& normal, Color Ia, vector<Light*> lights,
+        double eta1){
+    Point V = (v - p).normalize();
+    const Parameter* pa = &(obj->parameter);
+    Color ans = Ia * pa->ka;
+    for(vector<Light*>::iterator it = lights.begin();it!=lights.end();++it){
+        Point L = ((*it)->loc - p).normalize();
+        if(sign(dianji(V, normal)) == sign(dianji(L , normal))){
+            Point H = (L + V).normalize();
+            ans += (*it)->light * (pa->kds*dianji(L, normal) + pa->ks * pow(max(0., dianji(H, normal)), pa->ns));
+        }
+        else{
+            Point H = sign(eta1-obj->eta2)*(obj->eta2 * L + eta1 * V).normalize();
+            ans += (*it)->light * (pa->kdt*(dianji(normal, L)) + pa->kt * pow(max(0., -dianji(H, normal)), pa->nt));
+        }
+    }
+    return ans;
+}
 
 class Render{
 public:
     vector<Object*> objs;
-    vector<LightSource> Light;
+    vector<Light> Lights;
     Color background;
 
     void addObj(Object* a){
         objs.push_back(a);
     }
 
-    void addLight(Point p, Color c){
-        Light.push_back(LightSource(p, c));
+    void addLight(Point loc, Color color){
+        Lights.push_back(Light(loc, color));
     }
 
-    int findIntersection(Line ray, Point& interp, Object* & surface){
-        float d = INF;
+    int findIntersection(Line ray, Point& interp, Object* & surface, double d = INF){
         Point tmp;
+        int find = 0;
         for(vector<Object*>::iterator it=objs.begin();it!=objs.end();++it){
             if((*it)->intersection(ray, tmp)){
-                float val = dist(ray.first, tmp);
-                if(val < d){
-                    d = val;
+                double val = dist(ray.first, tmp);
+                if(val + eps < d){
                     interp = tmp;
                     surface = *it;
+                    find = 1;
+                    d = val;
                 }
             }
         }
-        return d!=INF;
+        return find;
     }
 
-    Color getLight(Point a){
-        Color now = Point(0, 0, 0);
-        for(vector<LightSource>::iterator it = Light.begin(); it!=Light.end(); ++ it){
-            Point interp;
-            Object* tmp;
-            if(findIntersection(make_pair(a, it->p), interp, tmp))
+    vector<Light*> getLight(Point a){
+        Point tmp;
+        Object* tmp2;
+        vector<Light*> lights;
+        for(vector<Light>::iterator it = Lights.begin();it != Lights.end();++it){
+            if(findIntersection(make_pair(a, it->loc), tmp, tmp2, dist(a, it->loc)))
                 continue;
-            now += it->color;
+            lights.push_back(&(*it));
         }
-        return now;
+        return lights;
     }
 
-    Color rayTrace(Line ray, int depth, float weight, float eta){
+    Color rayTrace(Line ray, int depth, double weight, double eta){
         if(weight < 1e-10 || !depth){
             return Color(0, 0, 0);
         }
         Point p;
-        Object* surface;
-        if( findIntersection(ray, p, surface) ){
-            Color color = surface->local(ray) * getLight(p)/127.5;
+        Object* obj;
+        if( findIntersection(ray, p, obj) ){
             Line tmp;
-            float wt, wr;
-            if((wr = surface->reflect(ray, tmp))>eps){
+            double wt, wr;
+            Point normal = obj->calc_norm(ray, p);
+            Color color = localLight(obj, ray.first, p, normal, obj->local(p), getLight(p), eta);
+            int beOut = dianji(normal, (ray.first - p).normalize())>-eps;
+            if((wr = obj->reflect(ray, tmp, p, normal))>eps && beOut){
                 Color haha = rayTrace(tmp, depth - 1, weight * wr, eta) * wr;
                 color += haha;
             }
-            if((wt = surface->transmit(ray, tmp, eta))>eps){
-                color += rayTrace(tmp, depth - 1, weight * wt, (eta==1?surface->eta2:1)) * wt;
+            if((wt = obj->transmit(ray, tmp, eta, p, normal))>eps){
+                Color haha = rayTrace(tmp, depth - 1, weight * wt, eta) * wt;
+                color += haha;
             }
-            color.x = min(color.x, (ld)255.);
-            color.y = min(color.y, (ld)255);
-            color.z = min(color.z, (ld)255);
+            color.clamp(255.);
             return color;
         }
         else

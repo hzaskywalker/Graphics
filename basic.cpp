@@ -3,9 +3,14 @@
 #include<iostream>
 #include<assert.h>
 #include<cmath>
-typedef float ld;
+typedef double ld;
 using namespace std;
-ld eps = 1e-4;
+ld eps = 1e-8;
+
+int sign(double a){
+    return a>eps?1:(a>-eps?0:-1);
+}
+
 class Point{
     public:
         ld x, y, z;
@@ -16,7 +21,7 @@ class Point{
             z += b.z;
             return *this;
         }
-        Point& operator += (const float& b){
+        Point& operator += (const double& b){
             x += b;
             y += b;
             z += b;
@@ -29,11 +34,16 @@ class Point{
             return *this;
         }
 
-        Point& operator -= (const float& b){
+        Point& operator -= (const double& b){
             x -= b;
             y -= b;
             z -= b;
             return *this;
+        }
+        void clamp(const double& a){
+            x = min(x, a);
+            y = min(y, a);
+            z = min(z, a);
         }
         Point& operator *= (const Point& b){
             x *= b.x;
@@ -41,13 +51,13 @@ class Point{
             z *= b.z;
             return *this;
         }
-        Point& operator *= (const float& b){
+        Point& operator *= (const double& b){
             x *= b;
             y *= b;
             z *= b;
             return *this;
         }
-        Point& operator /= (const float& b){
+        Point& operator /= (const double& b){
             x /= b;
             y /= b;
             z /= b;
@@ -65,6 +75,13 @@ class Point{
         ld norm() const{
             return sqrt(x * x + y * y + z * z);
         }
+        Point& normalize(){
+            ld a = norm();
+            x/=a;
+            y/=a;
+            z/=a;
+            return *this;
+        }
         ld norm2() const{
             return x * x + y * y + z * z;
         }
@@ -74,11 +91,11 @@ Point operator + (const Point& a, const Point& b){
     return Point(a.x + b.x, a.y + b.y, a.z + b.z);
 }
 
-Point operator + (const Point& a, const float& b){
+Point operator + (const Point& a, const double& b){
     return Point(a.x + b, a.y + b, a.z + b);
 }
 
-Point operator + (const float& b, const Point& a){
+Point operator + (const double& b, const Point& a){
     return Point(a.x + b, a.y + b, a.z + b);
 }
 
@@ -86,7 +103,7 @@ Point operator - (const Point& a, const Point& b){
     return Point(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 
-Point operator - (const Point& a, const float& b){
+Point operator - (const Point& a, const double& b){
     return Point(a.x - b, a.y - b, a.z - b);
 }
 
@@ -94,7 +111,7 @@ Point operator - (const Point& a){
     return Point(-a.x, -a.y, -a.z);
 }
 
-Point operator - (const float& b, const Point& a){
+Point operator - (const double& b, const Point& a){
     return Point(a.x - b, a.y - b, a.z - b);
 }
 
@@ -102,11 +119,11 @@ Point operator * (const Point& a, const Point& b){
     return Point(a.x * b.x, a.y * b.y, a.z * b.z);
 }
 
-Point operator * (const Point& a, const float& b){
+Point operator * (const Point& a, const double& b){
     return Point(a.x * b, a.y * b, a.z * b);
 }
 
-Point operator * (const float& b, const Point& a){
+Point operator * (const double& b, const Point& a){
     return Point(a.x * b, a.y * b, a.z * b);
 }
 
@@ -114,7 +131,7 @@ Point operator / (const Point& a, const Point& b){
     return Point(a.x / b.x, a.y / b.y, a.z / b.z);
 }
 
-Point operator / (const Point& a, const float& b){
+Point operator / (const Point& a, const double& b){
     return Point(a.x / b, a.y / b, a.z / b);
 }
 
@@ -168,18 +185,18 @@ int intersection(const Plane&a, const Line& b, Point& interp){
     return 1;
 }
 
-int intersectionBall(const Line& ray, const Point& O, const float& Radius, float& a, float& b){
+int intersectionBall(const Line& ray, const Point& O, const double& Radius, double& a, double& b){
     Point c= ray.second - ray.first;
     ld length = c.norm();
     c = c/length;
 
     ld mid = dianji( O - ray.first, c );
     Point project = c * mid + ray.first;
-    float d = dist(O, project); 
+    double d = dist(O, project); 
     if(d>Radius){
         return 0;
     }
-    float l = sqrt(Radius * Radius - d*d);
+    double l = sqrt(Radius * Radius - d*d);
     a = (mid - l)/length;
     b = (mid + l)/length;
     return 1;
