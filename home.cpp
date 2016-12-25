@@ -3,7 +3,6 @@
 #include "shape.cpp"
 #include<iostream>
 typedef Point Color;
-const double INF = 1e10;
 
 Color localLight(
         const Object* obj, const Point& v,
@@ -71,6 +70,11 @@ public:
         return lights;
     }
 
+    void initialize(){
+        for(vector<Object*>::iterator it=objs.begin();it!=objs.end();++it)
+            (*it)->intersection_times = 0;
+    }
+
     Color rayTrace(Line ray, int depth, double weight, double eta){
         if(weight < 1e-10 || !depth){
             return Color(0, 0, 0);
@@ -79,6 +83,7 @@ public:
         Object* obj;
 
         if( findIntersection(ray, p, obj) ){
+            obj->intersection_times += 1;
             Line tmp;
             double wt, wr;
             Point normal = obj->calc_norm(ray, p);

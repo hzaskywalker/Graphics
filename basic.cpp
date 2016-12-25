@@ -5,7 +5,9 @@
 #include<cmath>
 typedef double ld;
 using namespace std;
-ld eps = 1e-4;
+
+const double INF = 1e10;
+const ld eps = 1e-6;
 
 int sign(double a){
     return a>eps?1:(a>-eps?0:-1);
@@ -142,7 +144,7 @@ ostream& operator << (ostream& a, const Point& b){
 
 
 Point chaji(const Point& a, const Point& b){
-    return Point(a.x * b.y - a.y * b.x, a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z);
+    return Point(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
 }
 
 ld dianji(const Point& a, const Point& b){
@@ -180,8 +182,7 @@ int intersection(const Plane&a, const Line& b, Point& interp){
     if(abs(dt - ds)< eps){
         return 0;
     }
-    assert (abs(dt - ds)> eps);
-    interp = (b.second - b.first)/(dt-ds) * ds  + b.first;
+    interp = (b.second - b.first) * (ds/(ds-dt))  + b.first;
     return 1;
 }
 
@@ -200,6 +201,17 @@ int intersectionBall(const Line& ray, const Point& O, const double& Radius, doub
     a = (mid - l)/length;
     b = (mid + l)/length;
     return 1;
+}
+
+int intersectionFace(const Line& ray, const Point& a, const Point& b, const Point& c, Point& p){
+    if(!intersection(Plane(a, b, c), ray, p))
+        return 0;
+    Point s1 = chaji(a - p, b - p);
+    Point s2 = chaji(b - p, c - p);
+    Point s3 = chaji(c - p, a - p);
+    int i = sign( dianji(s1, s2) );
+    int j = sign( dianji(s2, s3) );
+    return i>=0 && j>=0;
 }
 
 ostream& operator << (ostream& a, const Line& b){

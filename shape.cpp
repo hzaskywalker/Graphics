@@ -22,6 +22,7 @@ public:
     Point color;
     Point light;
     Parameter parameter;
+    int intersection_times;
 
     virtual int intersection(const Line& ray, Point& p) const = 0;
     virtual Point calc_norm(const Line& ray, const Point& p) const = 0;
@@ -79,6 +80,10 @@ public:
 
     void set_parameter(const Parameter& a){
         parameter = a;
+    }
+
+    void set_eta2(const double& a){
+        eta2 = a;
     }
 };
 
