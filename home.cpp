@@ -5,8 +5,6 @@
 typedef Point Color;
 const double INF = 1e10;
 
-//bool debug  = false;
-
 Color localLight(
         const Object* obj, const Point& v,
         const Point& p, Point& normal, Color Ia, vector<Light*> lights,
@@ -74,8 +72,6 @@ public:
     }
 
     Color rayTrace(Line ray, int depth, double weight, double eta){
-//        if(depth == 7)
-//            debug = false;
         if(weight < 1e-10 || !depth){
             return Color(0, 0, 0);
         }

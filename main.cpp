@@ -6,20 +6,20 @@
 #include "home.cpp"
 
 void makeEnvironment(Render& home){
-    Parameter paramb(0., 0.5, 0.5, 6, 0.0, 0.0, 6);
+    Parameter paramb(0.2, 0.3, 0.3, 6, 0.6, 0.3, 6);
     Parameter paramc(0., 0.0, 0.0, 6, 0.4, 0.1, 6);
-    Parameter param2(0.5, 0.2, 0.1, 4, 0.0, 0.0, 4);
+    Parameter param2(0.5, 0.4, 0.4, 4, 0.4, 0.4, 4);
 
-    Ball* b = new Ball(Point(100, -600, 800), 200, 0.9);
+    Ball* b = new Ball(Point(100, -600, 800), 200, 1.2);
     b->set_reflect_value(0.8);
     b->set_transmit_val(0.2);
     b->set_color(Color(0, 127.5, 0));
     b->set_parameter(paramb);
 
     //Ball* c = new Ball(Point(-201, -300, 450), 100, 1.4);
-    Ball* c = new Ball(Point(30, -200, 300), 200, 1.4);
-    c->set_reflect_value(0.3);
-    c->set_transmit_val(0.7);
+    Ball* c = new Ball(Point(-400, -700, 600), 100, 1.8);
+    c->set_reflect_value(0.1);
+    c->set_transmit_val(0.9);
     c->set_color(Color(0, 0, 255));
     c->set_parameter(paramc);
 
@@ -38,7 +38,7 @@ void makeEnvironment(Render& home){
     home.addObj(c);
     for(int i = 0;i<6;++i){
         all[i]->set_parameter(param2);
-        all[i]->set_reflect_value(0.3);
+        all[i]->set_reflect_value(0);
         home.addObj(all[i]);
     }
     home.addLight(Point( -400, -400., 400. ), Color(255, 255, 255));

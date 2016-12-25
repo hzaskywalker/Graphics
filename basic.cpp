@@ -5,7 +5,7 @@
 #include<cmath>
 typedef double ld;
 using namespace std;
-ld eps = 1e-8;
+ld eps = 1e-4;
 
 int sign(double a){
     return a>eps?1:(a>-eps?0:-1);
