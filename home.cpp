@@ -5,6 +5,8 @@
 typedef Point Color;
 const double INF = 1e10;
 
+//bool debug  = false;
+
 Color localLight(
         const Object* obj, const Point& v,
         const Point& p, Point& normal, Color Ia, vector<Light*> lights,
@@ -19,6 +21,8 @@ Color localLight(
             ans += (*it)->light * (pa->kds*dianji(L, normal) + pa->ks * pow(max(0., dianji(H, normal)), pa->ns));
         }
         else{
+            if(pa->kdt ==0 && pa->kt == 0)
+                continue;
             Point H = sign(eta1-obj->eta2)*(obj->eta2 * L + eta1 * V).normalize();
             ans += (*it)->light * (pa->kdt*(dianji(normal, L)) + pa->kt * pow(max(0., -dianji(H, normal)), pa->nt));
         }
@@ -70,17 +74,21 @@ public:
     }
 
     Color rayTrace(Line ray, int depth, double weight, double eta){
+//        if(depth == 7)
+//            debug = false;
         if(weight < 1e-10 || !depth){
             return Color(0, 0, 0);
         }
         Point p;
         Object* obj;
+
         if( findIntersection(ray, p, obj) ){
             Line tmp;
             double wt, wr;
             Point normal = obj->calc_norm(ray, p);
             Color color = localLight(obj, ray.first, p, normal, obj->local(p), getLight(p), eta);
             int beOut = dianji(normal, (ray.first - p).normalize())>-eps;
+
             if((wr = obj->reflect(ray, tmp, p, normal))>eps && beOut){
                 Color haha = rayTrace(tmp, depth - 1, weight * wr, eta) * wr;
                 color += haha;

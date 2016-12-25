@@ -34,7 +34,7 @@ public:
         double c1 = dianji(a, n);
         if(1-c1*c1>=eta*eta)
             return 0;
-        double c2 = sqrt(1- 1/(eta*eta) * (1-c1*c1));
+        double c2 = sqrt(1- (1-c1*c1)/(eta*eta));
         p = -1/eta * a - (c2 - 1/eta * c1) * n;
         return 1;
     }
@@ -55,9 +55,9 @@ public:
     double transmit(const Line& ray, Line& transmittedRay, double eta1, const Point& interp, const Point& norm){
         if(eta2 != 0){
             int beOut = dianji(norm, ray.first - interp)>0;
-            double eta = beOut?eta1/eta2:eta2/eta1;
+            double eta = beOut?eta2/eta1:eta1/eta2;
             Point aim;
-            if( _transmit(ray.first - interp, norm, eta2/eta1, aim) ){
+            if( _transmit(ray.first - interp, norm * (beOut?1:-1), eta, aim) ){
                 transmittedRay = make_pair(interp,  aim + interp);
                 return transmit_value;
             }
