@@ -1,6 +1,7 @@
 #ifndef INCLUDEBASIC
 #define INCLUDEBASIC 
 #include<iostream>
+#include<vector>
 #include<assert.h>
 #include<cmath>
 typedef double ld;
@@ -13,10 +14,122 @@ int sign(double a){
     return a>eps?1:(a>-eps?0:-1);
 }
 
+typedef vector<vector<double> > Matrix;
+
+void outMatrix(Matrix A){
+    for(int i = 0;i<A.size(); ++i){
+        for(int j =0 ;j<A[i].size();++j)
+            cout<<A[i][j]<<" ";
+        cout<<endl;
+    }
+}
+
+Matrix buildMatrix(int n, int m){
+    return vector< vector<double> >(n, vector<double>(m, 0.));
+}
+
+Matrix operator + (const Matrix& a, const Matrix& b){
+    Matrix c = buildMatrix(a.size(), a[0].size());
+    for(int i = 0;i<a.size();++i)
+        for(int j = 0;j<b[0].size();++j)
+            c[i][j] = a[i][j] + b[i][j];
+    return c;
+}
+
+Matrix operator * (const Matrix& a, const Matrix& b){
+    Matrix c = buildMatrix(a.size(), b[0].size());
+    assert(c.size() == a.size());
+    assert(c[0].size() == b[0].size());
+    assert(a[0].size() == b.size());
+    for(int i = 0;i<a.size();++i)
+        for(int j = 0;j<b[0].size();++j)
+            for(int k=0;k<b.size();++k)
+                c[i][j] += a[i][k] * b[k][j];
+    return c;
+}
+
+Matrix Gaussian(Matrix A){
+    int n = A.size();
+    int m = A[0].size();
+    for(int i=0;i<n;++i){
+        for(int j=i;j<n;++j)
+            if(A[j][i]!=0){
+                for(int k=0;k<m;++k)
+                    swap(A[j][k], A[i][k]);
+                break;
+            }
+        if(A[i][i]==0)
+            continue;
+        ld tmp = A[i][i];
+        for(int j=0;j<m;++j)
+            A[i][j]/=tmp;
+
+        for(int j=0;j<n;++j)
+            if(A[j][i]!=0 && i!=j){
+                ld tmp = A[j][i]/A[i][i];
+                for(int k=0;k<m;++k)
+                    A[j][k] -= A[i][k]*tmp;
+            }
+    }
+    return A;
+}
+
+Matrix Inv(Matrix A){
+    int n = A.size();
+    Matrix C = A;
+    for(int i=0;i<n;++i){
+        for(int j=0;j<n;++j)
+            A[i].push_back(double(i==j));
+    }
+    A = Gaussian(A);
+    Matrix B;
+    for(int i=0;i<n;++i){
+        vector<ld> tmp;
+        for(int j=0;j<n;++j)
+            tmp.push_back(A[i][j+n]);
+        B.push_back(tmp);
+    }
+    return B;
+}
+
+Matrix transpose(const Matrix& a){
+    Matrix c = buildMatrix(a[0].size(), a.size());
+    for(int i = 0;i<c.size();++i)
+        for(int j = 0;j<c[i].size();++j)
+            c[i][j] = a[j][i];
+    return c;
+}
+
 class Point{
     public:
         ld x, y, z;
         Point(ld a = 0, ld b = 0, ld c = 0):x(a), y(b), z(c){}
+
+        Point(Matrix a){
+            if(a.size() == 0){
+                x = a[0][0];
+                y = a[0][1];
+                z = a[0][2];
+            }
+            else{
+                x = a[0][0];
+                y = a[1][0];
+                z = a[2][0];
+            }
+        }
+
+        Matrix getMatrix(int n = 1) const{
+            Matrix c = buildMatrix(1, 4);
+            c[0][0] = x;
+            c[0][1] = y;
+            c[0][2] = z;
+            c[0][3] = 1;
+            if(n==3){
+                return transpose(c);
+            }
+            return c;
+        }
+
         Point& operator += (const Point& b){
             x += b.x;
             y += b.y;
