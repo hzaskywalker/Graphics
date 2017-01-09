@@ -18,19 +18,21 @@ Point solveV(const Matrix& Q, const Point& a, const Point& b){
     Matrix invA = Inv(bb);
     Point v( invA * Point(0, 0, 0).getMatrix(3) );
 
-    return v;
-    if(abs( dist(v, a) + dist(v, b) - dist(a, b) ) < eps){
+    if(dist(v, a) + dist(v, b) < dist(a, b) * 3 ){
         return v;
     }
     return (a+b)/2;
 }
+struct Edge;
 
 struct Node{
     Matrix Q;
     Point pts;
     double E;
+    int fix;
     Node(){
         Q = buildMatrix(4, 4);
+        fix = 0;
     }
 };
 
@@ -104,11 +106,15 @@ class Simplify{
                     }
                 }
                 else{
-                    assert(r->t!=0);
-                    if(r->t == now->t){
+                    int flag = (r->t==0);
+                    if(r->t == now->t || r->t == 0){
                         r->used = 1;
                         assert(r->face == -1);
                         r->t = uedge[(i-1+uedge.size())%uedge.size()]->t;
+                    }
+                    if(flag){
+                        r->t->fix = 1;
+                        now->t->fix = 1;
                     }
                 }
             }
@@ -193,6 +199,7 @@ class Simplify{
     }
 
     void update(Edge* e, Node* newa){
+        assert(e->t->fix == 0);
         for(Edge* i = e->next->rev;i!=e;i=i->next->rev){
             //cout<<i-edges<<" "<<i->t-nodes<<" "<<i->next->rev->t-nodes<<" "<<i-edges<<" "<<i->next->rev-edges<<" "<<newa-nodes<<endl;
             assert(i->t == e->t);
@@ -203,7 +210,8 @@ class Simplify{
                 p->E = i->t->E + i->rev->t->E;
                 p->used = 1;
                 p->rev->used = 0;
-                heap.insert( make_pair(p->E, p) );
+                if(p->t->fix == 0 && p->rev->t->fix == 0)
+                    heap.insert( make_pair(p->E, p) );
             }
         }
     }
@@ -220,6 +228,9 @@ class Simplify{
                 continue;
             Node* b = i->t;
             Node* a = i->rev->t;
+            if(a->fix || b->fix)
+                continue;
+            //debug
             assert(i->next->rev->t == b);
             if(a<b){
                 i->E = a->E + b->E;
@@ -241,6 +252,8 @@ class Simplify{
             assert(i->rev!=0);
             Node* b = i->t;
             Node* a = i->rev->t;
+            assert(a->fix == 0);
+            assert(b->fix == 0);
             assert(b>a);
 
             b->Q = a->Q + b->Q;
@@ -268,8 +281,8 @@ class Simplify{
             vector<int> tmp;
             for(int j = 0;j<faceEdges[i].size();++j){
                 int& p = haha[faceEdges[i][j]->t];
-                assert(faceEdges[i][j]->used || faceEdges[i][j]->rev->used);
-                assert(faceEdges[i][j]->rev->rev == faceEdges[i][j]);
+                //assert(faceEdges[i][j]->used || faceEdges[i][j]->rev->used);
+                //assert(faceEdges[i][j]->rev->rev == faceEdges[i][j]);
                 if(p==0){
                     p = ++tot;
                     pts.push_back(faceEdges[i][j]->t->pts);
@@ -312,12 +325,15 @@ class Simplify{
             if(edges!=0){
                 delete[] edges;
             }
+            if(nodes!=0){
+                delete[] nodes;
+            }
         }
 };
 
 int main(){
-    ObjObj a = ObjObj("objs/sphere.obj");
-    Simplify t(a.pts, a.faces, 0.01);
+    ObjObj a = ObjObj("objs/fixed.perfect.dragon.100K.0.07.obj");
+    Simplify t(a.pts, a.faces, 0.1);
     t.output(a.pts, a.faces);
     a.output("tmp.obj");
     return 0;

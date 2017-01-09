@@ -59,6 +59,8 @@ class ObjObj:public Object{
             string tmp;
             while(getline(fin, tmp)){
                 vector<string> splited = split(tmp);
+                if(splited.size()==0)
+                    continue;
                 if(splited[0] == "v"){
                     pts.push_back(Point(
                                 atof(splited[1].c_str()),
