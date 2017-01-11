@@ -65,7 +65,7 @@ public:
         return find;
     }
 
-    void localLight(const Point& normal, const Point u){
+    Color localLight(const Point& normal, const Point u){
         Object* tmp;
         Color ans;
         for(vector<Light*>::iterator it=Lights.begin();it!=Lights.end();++it){
@@ -104,7 +104,13 @@ public:
 
         ld c = max( max(obj->color.x, obj->color.y), obj->color.z);
         Color f = obj->color;
+
         ld t = erand();
+        if(obj->isLight){
+            if(depth!=0)
+                return Color();
+            else return obj->light;
+        }
         if(depth>Depth){
             if(t > 0.8){
                 return obj->light;
@@ -154,7 +160,7 @@ public:
             color += rayTrace(make_pair(p, p + transmitRay), depth + 1, weight * wt, eta1) * wt;
         }
 
-        return color*f + obj->light;
+        return color*f + localLight(normal, p);
     }
 
     Render(){

@@ -294,7 +294,7 @@ ld dist(const Point& a, const Point& b){
     return (a-b).norm();
 }
 
-int intersection(const Plane&a, const Line& b, Point& interp){
+int intersectionPlane(const Plane&a, const Line& b, Point& interp){
     ld ds = a.projectDelta(b.first), dt = a.projectDelta(b.second);
     if(abs(dt - ds)< eps){
         return 0;
@@ -321,7 +321,7 @@ int intersectionBall(const Line& ray, const Point& O, const double& Radius, doub
 }
 
 int intersectionFace(const Line& ray, const Point& a, const Point& b, const Point& c, Point& p){
-    if(!intersection(Plane(a, b, c), ray, p))
+    if(!intersectionPlane(Plane(a, b, c), ray, p))
         return 0;
     Point s1 = chaji(a - p, b - p);
     Point s2 = chaji(b - p, c - p);

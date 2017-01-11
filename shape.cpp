@@ -9,12 +9,6 @@ using namespace std;
 
 typedef Point Color;
 
-class Parameter{
-public:
-    double ka, kds, ks, ns, kdt, kt, nt;
-    Parameter(double _ka = 0, double _kds = 0, double _ks = 0, double _ns = 0, double _kdt = 0, double _kt = 0, double _nt = 0):ka(_ka), kds(_kds), ks(_ks), ns(_ns), kdt(_kdt), kt(_kt), nt(_nt){}
-};
-
 class Object{
 public:
     double reflect_value;
@@ -22,7 +16,6 @@ public:
     double diffuse_value;
     Point color;
     Point light;
-    Parameter parameter;
     int isLight;
 
     virtual int intersection(const Line& ray, Point& p) const = 0;
@@ -54,10 +47,6 @@ public:
         transmit_value = a;
     }
 
-    void set_parameter(const Parameter& a){
-        parameter = a;
-    }
-
     void set_eta2(const double& a){
         eta2 = a;
     }
@@ -68,29 +57,47 @@ Object::~Object(){}
 class Light:public Object{
 public:
     virtual Point sample(const Point& p, const Point& n, Point& out) const = 0;
-    Color calc(const Point& d, const Point& n, const Point& n2) const{
+    ld calc(const Point& d, const Point& n, const Point& n2) const{
         ld tmp = d.norm2();
         return dianji(d, n) * (-dianji(n2, d))/tmp/tmp;
     }
 };
 
-class Rectangle:Light{
+class Rectangle:public Light{
+    public:
     Point a, b, c;
     Point normal;
-    ld area;
+    ld area, lb, lc;
     Rectangle(Point _a, Point _b, Point _c):a(_a), b(_b), c(_c){
         b-=a;
         c-=a;
         normal = chaji(b, c);
         area = normal.norm();
         normal/=area;
+        lb = b.norm();
+        lc = c.norm();
+        area = lb * lc;
     }
-    Point sample(const Point& p, const Point& n, Point& out)const{
-        ld x = rand();
-        ld y = rand();
+    Point sample(const Point& u, const Point& n, Point& out)const{
+        ld x = erand();
+        ld y = erand();
         Point v = a + b * x + c*y;
-        out = calc(v-p, n, normal) * light;
+        out = abs(calc(v-u, n, normal)) * light * area;
         return v;
+    }
+
+    int intersection(const Line& ray, Point& p)const{
+        if(!intersectionPlane(Plane(a, normal), ray, p))
+            return 0;
+        ld x = dianji(p-a, b);
+        ld y = dianji(p-a, c);
+        return x<=lb*lb && y<=lc*lc && x>=0 && y>=0;
+    }
+    Point calc_norm(const Line& ray, const Point& p)const{
+        return normal;
+    }
+    Color local(const Point& point)const{
+        return light;
     }
 };
 

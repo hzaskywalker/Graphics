@@ -5,7 +5,7 @@
 #include "camera.cpp"
 #include "home.cpp"
 
-void makeEnvironment(Render& home){
+void makeObject(Render& home){
     ld t6 = 1e6;
     ld delta = 1000;
     /*
@@ -16,21 +16,21 @@ void makeEnvironment(Render& home){
     b->light = Color(3,3,3);
     */
 
-    Ball* c = new Ball(Point(-400, -100, 600), 200, 2.);
+    Ball* c = new Ball(Point(-200, -100, 700), 100, 2.);
     c->set_reflect_value(1.);
     c->set_transmit_val(0.);
     c->set_color(Color(1., 1., 1.));
     c->set_diffuse_value(0);
 
-    Ball* d = new Ball(Point(600, -699, 500), 300, 1.5);
+    Ball* d = new Ball(Point(200, -700, 800), 300, 1.5);
     d->set_reflect_value(0);
     d->set_transmit_val(1.);
     d->set_color(Color(1., 1., 1.));
     d->set_diffuse_value(0);
 
     Ball* all[] = {
-        new Ball(Point(0, 0, t6 + delta * 2), t6, 0., Color(0.75, 0.75, 0.25)),
-        new Ball(Point(0, 0, -t6 - delta * 2), t6, 0., Color(0.25, 0.25, 0.75)),
+        new Ball(Point(0, 0, t6 + delta), t6, 0., Color(0.75, 0.75, 0.25)),
+        new Ball(Point(0, 0, -t6 - delta), t6, 0., Color(0.25, 0.25, 0.75)),
         new Ball(Point(t6 + delta, 0, 0), t6, 0., Color(0.25, 0.75, 0.25)),
         new Ball(Point(-t6 -delta, 0, 0), t6, 0., Color(0.75, 0.25, 0.25)),
         new Ball(Point(0, -t6 - delta, 0), t6, 0., Color(0.75, 0.75, 0.75)),
@@ -45,12 +45,27 @@ void makeEnvironment(Render& home){
         home.addObj(all[i]);
     }
 
-    Ball* light = new Ball(Point(0, 900, 300), 300, 1);
+}
+
+void makeEnvironment(Render& home){
+    makeObject(home);
+    Ball* light = new Ball(Point(0, 900, 800), 300, 1);
     light->light = Color(50, 50, 50);
     home.addObj(light);
 }
 
 void makeEnvironment2(Render& home){
+    makeObject(home);
+    ld L = 200;
+    ld H = 999;
+    ld D = 700;
+    Rectangle* rec = new Rectangle(
+            Point(-L, H, D -L/2),
+            Point(-L, H, D + L/2),
+            Point(L, H, D - L/2));
+    rec->light = Color(30, 30, 30);
+    home.addObj(rec);
+    home.addLight(rec);
 }
 
 int main(int argc, char* argv[]){
@@ -72,8 +87,8 @@ int main(int argc, char* argv[]){
         height = atoi(argv[5]);
     }
     Render task;
-    Camera camera(Point(-1000, 1000, 1000), Point(1000, -1000, 1000), width, height);
-    makeEnvironment(task);
+    Camera camera(Point(-1000, 1000, 500), Point(1000, -1000, 500), width, height);
+    makeEnvironment2(task);
     cv::Mat result = camera.render(Point(0,0,0), task, 5, n, p);
     return 0;
 }
