@@ -8,13 +8,6 @@
 void makeObject(Render& home){
     ld t6 = 1e6;
     ld delta = 1000;
-    /*
-    Ball* b = new Ball(Point(0, t6+delta - 1, 0), t6, 0.);
-    b->set_reflect_value(1.);
-    b->set_transmit_val(0.);
-    b->set_diffuse_value(1);
-    b->light = Color(3,3,3);
-    */
 
     Ball* c = new Ball(Point(-200, -100, 700), 100, 2.);
     c->set_reflect_value(1.);
@@ -22,7 +15,7 @@ void makeObject(Render& home){
     c->set_color(Color(1., 1., 1.));
     c->set_diffuse_value(0);
 
-    Ball* d = new Ball(Point(200, -700, 800), 300, 1.5);
+    Ball* d = new Ball(Point(200, -700, 800), 300, 2.);
     d->set_reflect_value(0);
     d->set_transmit_val(1.);
     d->set_color(Color(1., 1., 1.));
@@ -87,8 +80,8 @@ int main(int argc, char* argv[]){
         height = atoi(argv[5]);
     }
     Render task;
-    Camera camera(Point(-1000, 1000, 500), Point(1000, -1000, 500), width, height);
+    Camera camera(Point(-400, 400, 500), Point(400, -400, 500), width, height);
     makeEnvironment2(task);
-    cv::Mat result = camera.render(Point(0,0,0), task, 5, n, p);
+    cv::Mat result = camera.render(Point(0,0,-1000), task, 5, n, p);
     return 0;
 }
