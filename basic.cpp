@@ -10,6 +10,10 @@ using namespace std;
 const double INF = 1e10;
 const ld eps = 1e-6;
 
+ld erand(){
+    return (rand() % 1000000)/1000000.;
+}
+
 int sign(double a){
     return a>eps?1:(a>-eps?0:-1);
 }
