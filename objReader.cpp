@@ -19,12 +19,11 @@ vector<string> split(string s, char tt = ' '){
     return elems;
 }
 
-class ObjObj:public Object{
+class ObjObj{
     public:
         vector< Point > pts;
         vector< vector<int> > faces;
 
-        mutable int intersection_face;
         double minx, miny, maxx, maxy, minz, maxz;
 
         void locate(double scale, double dx, double dy, double dz){
@@ -84,43 +83,6 @@ class ObjObj:public Object{
             for(size_t i = 0; i<faces.size();++i){
                 fout<<"f "<<faces[i][0]+1<<" "<<faces[i][1]+1<<" "<<faces[i][2]+1<<endl;
             }
-        }
-
-        Plane get_face(int i) const{
-            return Plane( pts[faces[i][0]], 
-                    pts[faces[i][1]], 
-                    pts[faces[i][2]]);
-        }
-
-        int intersection(const Line& ray, Point& output) const{
-            Point t;
-            double d = INF;
-            for(int i = 0;i<faces.size(); ++ i){
-                if( intersectionFace(ray, 
-                            pts[faces[i][0]], 
-                            pts[faces[i][1]], 
-                            pts[faces[i][2]], t) ){
-                    double val = dianji(t - ray.first, ray.second - ray.first);
-                    if(val < d && val > 1e-3){
-                        intersection_face = i;
-                        d = val;
-                        output = t;
-                    }
-                }
-            }
-            return d != INF;
-        }
-
-        Point calc_norm(const Line& ray, const Point& interp) const{
-            Point normal =  get_face(intersection_face).dst.normalize();
-            int beOut = sign( dianji(normal, ray.first - interp) );
-            if((beOut >= 0) != (intersection_times % 2 == 1))
-                normal *= -1;
-            return normal;
-        }
-
-        Color local(const Point& point) const{
-            return Point(0, 0, 0);
         }
 };
 

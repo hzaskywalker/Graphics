@@ -125,10 +125,7 @@ class PlyObj:public Object{
     }
 
     Point calc_norm(const Line& ray, const Point& interp) const{
-        Point normal =  get_face(intersection_face).dst.normalize();
-        int beOut = sign( dianji(normal, ray.first - interp) );
-        if((beOut >= 0) != (intersection_times % 2 == 1))
-            normal *= -1;
+        assert(0);
         return normal;
     }
 

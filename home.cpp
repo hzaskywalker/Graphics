@@ -31,16 +31,12 @@ Color localLight(
 class Render{
 public:
     vector<Object*> objs;
-    vector<Light> Lights;
+    vector<Object*> Lights;
     Color background;
     int Depth;
 
     void addObj(Object* a){
         objs.push_back(a);
-    }
-
-    void addLight(Point loc, Color color){
-        Lights.push_back(Light(loc, color));
     }
 
     int findIntersection(Line ray, Point& interp, Object* & surface, double d = INF){
@@ -58,23 +54,6 @@ public:
             }
         }
         return find;
-    }
-
-    vector<Light*> getLight(Point a){
-        Point tmp;
-        Object* tmp2;
-        vector<Light*> lights;
-        for(vector<Light>::iterator it = Lights.begin();it != Lights.end();++it){
-            if(findIntersection(make_pair(a, it->loc), tmp, tmp2, dist(a, it->loc)))
-                continue;
-            lights.push_back(&(*it));
-        }
-        return lights;
-    }
-
-    void initialize(){
-        for(vector<Object*>::iterator it=objs.begin();it!=objs.end();++it)
-            (*it)->intersection_times = 0;
     }
 
     ld transmit(const Point& a, const Point& n, const double& eta, Point& p){

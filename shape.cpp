@@ -23,7 +23,7 @@ public:
     Point color;
     Point light;
     Parameter parameter;
-    int intersection_times;
+    int times;
 
     virtual int intersection(const Line& ray, Point& p) const = 0;
     virtual Point calc_norm(const Line& ray, const Point& p) const = 0;
