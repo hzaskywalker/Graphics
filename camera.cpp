@@ -30,27 +30,23 @@ class Camera{
                     cout<<"\b\r"<<((double)num)/tot * 100;
                     num += 1;
                     Color color;
-                    if(MC == 0){
-                        Point direction = startRay(i + 0.5, j + 0.5, w, h);
-                        color = home.rayTrace(make_pair(O, O + direction), 0, 1., 1., MC);
+
+                    int n = 1000;
+                    for(int k = 0;k<n;++k){
+                        double t = erand() * 2 * M_PI;
+                        double r = erand() * 2;
+                        Point direction = startRay(i + 0.5 + r*cos(t), j + 0.5 + r*sin(t), w, h).normalize();
+                        Point p = O+direction;
+                        color += home.rayTrace(make_pair(p-direction, p), 0, 1., 1.);
                     }
-                    else{
-                        int n = 10;
-                        for(int k = 0;k<n;++k){
-                            double t = erand() * 2 * M_PI;
-                            double r = erand() * 2;
-                            Point direction = startRay(i + 0.5 + r*cos(t), j + 0.5 + r*sin(t), w, h);
-                            Color haha = home.rayTrace(make_pair(O, O+direction), 0, 1., 1., MC);
-                            color += haha;
-                        }
-                        color/=n;
-                    }
+                    color/=n;
+
                     color.clamp(1);
                     color = color*255;
                     _m(j, i) = cv::Vec<unsigned char, 3>(color.x, color.y, color.z);
                 }
                 image = _m;
-                cv::imwrite("tmp.jpg", image);
+                cv::imwrite("tmp.png", image);
             }
             cout<<"\b\r"<<"end"<<endl;
             image = _m;

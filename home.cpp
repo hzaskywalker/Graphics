@@ -89,20 +89,23 @@ public:
         return 1 - (Rs * Rs + Rp * Rp) / 2;
     }
 
-    Color rayTrace(Line ray, int depth, double weight, double eta1, int MC){
+    Color rayTrace(Line ray, int depth, double weight, double eta1){
         if(weight < 1e-10){
             return Color(0, 0, 0);
         }
         Point p;
         Object* obj;
 
-        if( !findIntersection(ray, p, obj) )
+        //ray.first += (ray.second - ray.first)*eps;
+        if( !findIntersection(ray, p, obj) ){
             return background;
+        }
 
         ld c = max( max(obj->color.x, obj->color.y), obj->color.z);
         Color f = obj->color;
+        ld t = erand();
         if(depth>Depth){
-            if(erand() > 0.8){
+            if(t > 0.8){
                 return obj->light;
             }
             f /= 0.8;
@@ -123,7 +126,7 @@ public:
         }
 
         ld wr = obj->reflect_value, wt = obj->transmit_value;
-        if(MC && depth>2){
+        if(depth>2){
             if(erand() > kt){
                 wr += obj->transmit_value;
                 wt = 0;
@@ -133,22 +136,21 @@ public:
             wr += obj->transmit_value * (1-kt);
             wt *= kt;
         }
-
         if( wr > eps ){
-            if(obj->diffuse_value == 0)
-                color += rayTrace(make_pair(p, p + reflectRay), depth + 1, weight * wr, eta1, MC) * wr;
-            else{
-                ld r1 = 2*M_PI * erand(), r2 = erand(), r2s = sqrt(r2);
-                Point w = c1<0?-normal:normal;
-                Point u = chaji( w.x>1?Point(0, 1, 0):Point(1, 0, 0), w );
-                Point v = chaji( w, u ); 
-                Point diffuseRay = w*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrt(1-r2);
-                Color haha = rayTrace(make_pair(p, p + diffuseRay), depth + 1, weight, eta1, MC);
-                color +=  haha* obj->diffuse_value; 
-            }
+            color += rayTrace(make_pair(p, p + reflectRay), depth + 1, weight * wr, eta1) * wr;
+        }
+        if(obj->diffuse_value>eps){
+            ld r1 = 2*M_PI * erand(), r2 = erand(), r2s = sqrt(r2);
+            Point w = c1<0?-normal:normal;
+            Point u = chaji( w.x>1?Point(0, 1, 0):Point(1, 0, 0), w ).normalize();
+            Point v = chaji( w, u ); 
+            Ball* t = (Ball*)obj;
+            Point diffuseRay = u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrt(1-r2);
+            Color haha = rayTrace(make_pair(p, p + diffuseRay.normalize()), depth + 1, weight, eta1);
+            color +=  haha* obj->diffuse_value; 
         }
         if(wt != 0){
-            color += rayTrace(make_pair(p, p + transmitRay), depth + 1, weight * wt, eta1, MC) * wt;
+            color += rayTrace(make_pair(p, p + transmitRay), depth + 1, weight * wt, eta1) * wt;
         }
 
         return color*f + obj->light;

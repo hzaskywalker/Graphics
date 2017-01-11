@@ -11,7 +11,7 @@ const double INF = 1e10;
 const ld eps = 1e-6;
 
 ld erand(){
-    return (rand() % 1000000)/1000000.;
+    return rand()*1./RAND_MAX;
 }
 
 int sign(double a){
