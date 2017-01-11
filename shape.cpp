@@ -23,7 +23,7 @@ public:
     Point color;
     Point light;
     Parameter parameter;
-    int times;
+    int isLight;
 
     virtual int intersection(const Line& ray, Point& p) const = 0;
     virtual Point calc_norm(const Line& ray, const Point& p) const = 0;
@@ -35,6 +35,7 @@ public:
         diffuse_value = 0;
         reflect_value = 0;
         eta2 = 1;
+        isLight = 0;
     }
 
     void set_reflect_value(double a){
@@ -64,11 +65,33 @@ public:
 
 Object::~Object(){}
 
-class Light{
+class Light:public Object{
 public:
-    Point loc;
-    Color light;
-    Light(const Point& _loc, const Color& _light):loc(_loc), light(_light){}
+    virtual Point sample(const Point& p, const Point& n, Point& out) const = 0;
+    Color calc(const Point& d, const Point& n, const Point& n2) const{
+        ld tmp = d.norm2();
+        return dianji(d, n) * (-dianji(n2, d))/tmp/tmp;
+    }
+};
+
+class Rectangle:Light{
+    Point a, b, c;
+    Point normal;
+    ld area;
+    Rectangle(Point _a, Point _b, Point _c):a(_a), b(_b), c(_c){
+        b-=a;
+        c-=a;
+        normal = chaji(b, c);
+        area = normal.norm();
+        normal/=area;
+    }
+    Point sample(const Point& p, const Point& n, Point& out)const{
+        ld x = rand();
+        ld y = rand();
+        Point v = a + b * x + c*y;
+        out = calc(v-p, n, normal) * light;
+        return v;
+    }
 };
 
 class Ball:public Object{

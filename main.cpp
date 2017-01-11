@@ -16,13 +16,13 @@ void makeEnvironment(Render& home){
     b->light = Color(3,3,3);
     */
 
-    Ball* c = new Ball(Point(-400, -700, 600), 100, 2.);
+    Ball* c = new Ball(Point(-400, -100, 600), 200, 2.);
     c->set_reflect_value(1.);
     c->set_transmit_val(0.);
     c->set_color(Color(1., 1., 1.));
     c->set_diffuse_value(0);
 
-    Ball* d = new Ball(Point(-10, -100, 100), 400, 1.5);
+    Ball* d = new Ball(Point(600, -699, 500), 300, 1.5);
     d->set_reflect_value(0);
     d->set_transmit_val(1.);
     d->set_color(Color(1., 1., 1.));
@@ -34,7 +34,7 @@ void makeEnvironment(Render& home){
         new Ball(Point(t6 + delta, 0, 0), t6, 0., Color(0.25, 0.75, 0.25)),
         new Ball(Point(-t6 -delta, 0, 0), t6, 0., Color(0.75, 0.25, 0.25)),
         new Ball(Point(0, -t6 - delta, 0), t6, 0., Color(0.75, 0.75, 0.75)),
-        new Ball(Point(0, t6 + delta, 0), t6, 0., Color(0, 0, 0)),
+        new Ball(Point(0, t6 + delta, 0), t6, 0., Color(0, 0, 1.)),
     };
 
     home.addObj(c);
@@ -72,8 +72,8 @@ int main(int argc, char* argv[]){
         height = atoi(argv[5]);
     }
     Render task;
-    Camera camera(Point(500, 500, 800), Point(-500, -500, 800), width, height);
+    Camera camera(Point(-1000, 1000, 1000), Point(1000, -1000, 1000), width, height);
     makeEnvironment(task);
-    cv::Mat result = camera.render(Point(0,0,-1000), task, 5, n, p);
+    cv::Mat result = camera.render(Point(0,0,0), task, 5, n, p);
     return 0;
 }

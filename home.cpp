@@ -5,6 +5,7 @@
 #include<cmath>
 typedef Point Color;
 
+/*
 Color localLight(
         const Object* obj, const Point& v,
         const Point& p, Point& normal, Color Ia, vector<Light*> lights,
@@ -27,16 +28,24 @@ Color localLight(
     }
     return ans;
 }
+*/
 
 class Render{
 public:
     vector<Object*> objs;
-    vector<Object*> Lights;
+    vector<Light*> Lights;
     Color background;
     int Depth;
 
     void addObj(Object* a){
         objs.push_back(a);
+    }
+
+    void addLight(Light* a){
+        if(a->light.norm() > 0){
+            a->isLight = 1;
+            Lights.push_back(a);
+        }
     }
 
     int findIntersection(Line ray, Point& interp, Object* & surface, double d = INF){
@@ -54,6 +63,19 @@ public:
             }
         }
         return find;
+    }
+
+    void localLight(const Point& normal, const Point u){
+        Object* tmp;
+        Color ans;
+        for(vector<Light*>::iterator it=Lights.begin();it!=Lights.end();++it){
+            Point light;
+            Point v = (*it)->sample(u, normal, light);
+            if(findIntersection(make_pair(u, v), v, tmp, dist(u, v) - eps))
+                continue;
+            ans+=light;
+        }
+        return ans;
     }
 
     ld transmit(const Point& a, const Point& n, const double& eta, Point& p){
