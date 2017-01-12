@@ -3,6 +3,7 @@
 #include<vector>
 #include<cmath>
 #include<iostream>
+#include "objReader.cpp"
 #include "assert.h"
 #include "basic.cpp"
 using namespace std;
@@ -57,6 +58,7 @@ Object::~Object(){}
 class Light:public Object{
 public:
     virtual Point sample(const Point& p, const Point& n, Point& out) const = 0;
+    virtual Point getDirectLight(const Point& u, const Point& v) const = 0;
     ld calc(const Point& d, const Point& n, const Point& n2) const{
         ld tmp = d.norm2();
         return dianji(d, n) * (-dianji(n2, d))/tmp/tmp;
@@ -78,6 +80,11 @@ class Rectangle:public Light{
         lc = c.norm();
         area = lb * lc;
     }
+
+    Point getDirectLight(const Point& u, const Point& v) const{
+        return light * abs(dianji((u-v).normalize(), normal)) * area;
+    }
+
     Point sample(const Point& u, const Point& n, Point& out)const{
         ld x = erand();
         ld y = erand();
@@ -142,6 +149,15 @@ class Triangle: public Object{
         Point normal, color, mid;
         ld uu, vv, uv, D;
 
+        int intersection(const Line& ray, Point& p) const{
+            Point s0 = ray.first;
+            Point dir = ray.second - ray.first;
+            ld r;
+            if(!((Triangle*)this)->intersection(s0, dir, r))
+                return 0;
+            p = s0 + dir * r;
+            return 1;
+        }
         Triangle( const Point& _a, const Point& _b, const Point& _c):a(_a), b(_b), c(_c){
             mid = (a+b+c)/3;
             u = b-a;
@@ -268,8 +284,15 @@ struct KDNode{
     }
 };
 
-class KDtree:public Object{
+class KDtree{
     vector<Triangle*> tris;
+    KDNode* root;
+
+    void buildKDtree(){
+        cout<<"initialize kd tree"<<endl;
+        root = split(tris, 0);
+        cout<<endl;
+    }
 
     KDNode* split(vector<Triangle*>& tris, int depth){
         KDNode* u = new KDNode();
@@ -324,7 +347,7 @@ class KDtree:public Object{
         int flag2 = u->rc && u->rc->bbox.intersection(a, b, tr1, tr2);
         Triangle* aim;
         int ans = 0;
-        if(tl1 < tr1){
+        if(tl1 < tr1 || !flag2){
             if(flag1)
                 ans|=hit(u->lc, a, b, p, obj);
             if(flag2 && ( obj==0 || p > tr1 ))
@@ -337,6 +360,34 @@ class KDtree:public Object{
                 ans|=hit(u->lc, a, b, p, obj);
         }
         return ans;
+    }
+
+public:
+    KDtree(){
+        tris = tris;
+        root = 0;
+    }
+
+    void addTriangle(Triangle* a){
+        tris.push_back(a);
+    }
+
+    int intersection(Line ray, Point& p, Object* &surface, ld& d){
+        if(root == 0){
+            buildKDtree();
+        }
+        Point a = ray.first;
+        Point b = (ray.second - ray.first).normalize();
+        ld r;
+        Triangle* t;
+        if(!hit(root, a, b, r, t))
+            return 0;
+        if(r>d)
+            return 0;
+        surface = t;
+        d = r;
+        p = a + b * r;
+        return 1;
     }
 };
 #endif

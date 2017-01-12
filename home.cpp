@@ -5,40 +5,20 @@
 #include<cmath>
 typedef Point Color;
 
-/*
-Color localLight(
-        const Object* obj, const Point& v,
-        const Point& p, Point& normal, Color Ia, vector<Light*> lights,
-        double eta1){
-    Point V = (v - p).normalize();
-    const Parameter* pa = &(obj->parameter);
-    Color ans = Ia * pa->ka;
-    for(vector<Light*>::iterator it = lights.begin();it!=lights.end();++it){
-        Point L = ((*it)->loc - p).normalize();
-        if(sign(dianji(V, normal)) == sign(dianji(L , normal))){
-            Point H = (L + V).normalize();
-            ans += (*it)->light * (pa->kds*dianji(L, normal) + pa->ks * pow(max(0., dianji(H, normal)), pa->ns));
-        }
-        else{
-            if(pa->kdt ==0 && pa->kt == 0)
-                continue;
-            Point H = sign(eta1-obj->eta2)*(obj->eta2 * L + eta1 * V).normalize();
-            ans += (*it)->light * (pa->kdt*(dianji(normal, L)) + pa->kt * pow(max(0., -dianji(H, normal)), pa->nt));
-        }
-    }
-    return ans;
-}
-*/
-
 class Render{
 public:
     vector<Object*> objs;
     vector<Light*> Lights;
     Color background;
+    KDtree kdtree;
     int Depth;
 
     void addObj(Object* a){
         objs.push_back(a);
+    }
+
+    void addTriangle(Triangle* a){
+        kdtree.addTriangle(a);
     }
 
     void addLight(Light* a){
@@ -48,9 +28,19 @@ public:
         }
     }
 
+    void addObjObj(ObjObj* ans){
+        for(int i = 0;i<ans->faces.size();++i){
+            Point a = ans->pts[ans->faces[i][0]];
+            Point b = ans->pts[ans->faces[i][1]];
+            Point c = ans->pts[ans->faces[i][2]];
+            addTriangle(new Triangle(a, b, c));
+        }
+    }
+
     int findIntersection(Line ray, Point& interp, Object* & surface, double d = INF){
         Point tmp;
         int find = 0;
+        kdtree.intersection(ray, interp, surface, d);
         for(vector<Object*>::iterator it=objs.begin();it!=objs.end();++it){
             if((*it)->intersection(ray, tmp)){
                 double val = dist(ray.first, tmp);
@@ -65,12 +55,20 @@ public:
         return find;
     }
 
-    Color localLight(const Point& normal, const Point u){
+    Color localLight(const Point& normal, const Point u, int glass){
+        return Color(0, 0, 0);
         Object* tmp;
         Color ans;
         for(vector<Light*>::iterator it=Lights.begin();it!=Lights.end();++it){
             Point light;
-            Point v = (*it)->sample(u, normal, light);
+            Point v;
+            if(glass == 0)
+                v = (*it)->sample(u, normal, light);
+            else{
+                if(!(*it)->intersection(make_pair(u, u + normal), v))
+                    continue;
+                light = (*it)->getDirectLight(u, v);
+            }
             if(findIntersection(make_pair(u, v), v, tmp, dist(u, v) - eps))
                 continue;
             ans+=light;
@@ -107,9 +105,7 @@ public:
 
         ld t = erand();
         if(obj->isLight){
-            if(depth!=0)
-                return Color();
-            else return obj->light;
+            return obj->light * abs( dianji(ray.first - ray.second, ((Rectangle*)obj)->normal) );
         }
         if(depth>Depth){
             if(t > 0.8){
@@ -122,6 +118,7 @@ public:
         Point normal = obj->calc_norm(ray, p).normalize();
         Point inp = (p - ray.first).normalize();
         Color color;
+        Color ll;
 
         double c1 = dianji(-inp, normal);
         Point reflectRay = 2*c1*normal + inp, transmitRay;
@@ -145,6 +142,7 @@ public:
         }
         if( wr > eps ){
             color += rayTrace(make_pair(p, p + reflectRay), depth + 1, weight * wr, eta1) * wr;
+            ll += localLight(reflectRay, p, 1) * wr;
         }
         if(obj->diffuse_value>eps){
             ld r1 = 2*M_PI * erand(), r2 = erand(), r2s = sqrt(r2);
@@ -154,13 +152,16 @@ public:
             Ball* t = (Ball*)obj;
             Point diffuseRay = u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrt(1-r2);
             Color haha = rayTrace(make_pair(p, p + diffuseRay.normalize()), depth + 1, weight, eta1);
-            color +=  haha* obj->diffuse_value; 
+            color +=  haha * obj->diffuse_value; 
+            ll += localLight(normal, p, 0) * obj->diffuse_value;
         }
         if(wt != 0){
             color += rayTrace(make_pair(p, p + transmitRay), depth + 1, weight * wt, eta1) * wt;
+            if(depth == 1)
+            ll += localLight(transmitRay, p, 1) * wt;
         }
 
-        return color*f + localLight(normal, p);
+        return (color + ll)*f + obj->light;
     }
 
     Render(){

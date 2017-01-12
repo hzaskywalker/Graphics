@@ -46,6 +46,22 @@ class ObjObj{
             cout<<"x range: "<<minx<<" "<<maxx<<endl;
             cout<<"y range: "<<miny<<" "<<maxy<<endl;
             cout<<"z range: "<<minz<<" "<<maxz<<endl;
+            int flag = 0;
+            for(int i = 0;i<faces.size();++i){
+                int a = faces[i][0];
+                int b = faces[i][1];
+                int c = faces[i][2];
+                if(pts[a].y == maxy || pts[b].y == maxy || pts[c].y==maxy){
+                    Point n = chaji(pts[b] - pts[a], pts[c] - pts[a]);
+                    if(dianji(n, Point(0, 1, 0))<0)
+                        flag = 1;
+                    break;
+                }
+            }
+            if(flag){
+                for(int i = 0;i<faces.size();++i)
+                    swap(faces[i][2], faces[i][3]);
+            }
         }
 
         ObjObj(vector<Point> _pts, vector< vector<int> > _faces){

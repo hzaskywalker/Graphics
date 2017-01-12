@@ -15,7 +15,7 @@ void makeObject(Render& home){
     c->set_color(Color(1., 1., 1.));
     c->set_diffuse_value(0);
 
-    Ball* d = new Ball(Point(200, -600, 600), 500, 0.9);
+    Ball* d = new Ball(Point(200, -400, 400), 400, 1.9);
     d->set_reflect_value(0);
     d->set_transmit_val(1.);
     d->set_color(Color(1., 1., 1.));
@@ -42,16 +42,16 @@ void makeObject(Render& home){
 
 void makeEnvironment(Render& home){
     makeObject(home);
-    Ball* light = new Ball(Point(0, 900, 800), 300, 1);
+    Ball* light = new Ball(Point(0, 900, 500), 300, 1);
     light->light = Color(50, 50, 50);
     home.addObj(light);
 }
 
 void makeEnvironment2(Render& home){
     makeObject(home);
-    ld L = 200;
+    ld L = 400;
     ld H = 999;
-    ld D = 700;
+    ld D = 500;
     Rectangle* rec = new Rectangle(
             Point(-L, H, D -L/2),
             Point(-L, H, D + L/2),
