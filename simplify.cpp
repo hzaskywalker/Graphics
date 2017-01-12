@@ -20,14 +20,8 @@ Point solveV(const Matrix& Q, const Point& a, const Point& b){
     if(vb < vv)
         return b;
     return v;
-    /*
-
-    if(dist(v, a) + dist(v, b) < dist(a, b)*2 ){
-        return v;
-    }
-    return (a+b)/2;
-    */
 }
+
 struct Edge;
 
 struct Node{

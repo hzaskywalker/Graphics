@@ -162,7 +162,7 @@ class Triangle: public Object{
             mid = (a+b+c)/3;
             u = b-a;
             v = c-a;
-            normal = chaji(u, v);
+            normal = chaji(u, v).normalize();
             uu= dianji(u, u);
             vv= dianji(v, v);
             uv= dianji(u, v);
@@ -187,20 +187,29 @@ class Triangle: public Object{
             ld aa = -dianji(normal, w0);
             ld bb = dianji(normal, dir);
             if(abs(bb)<eps){
-                assert(abs(aa)>eps);
+                if(abs(aa)>eps)
+                    return 0;
                 return 0;
             }
             r = aa/bb;
-            if(r<0)
+            if(r<eps)
                 return 0;
             Point p = s0 + r * dir;
-            Point w = p-s0;
+            Point w = p-a;
+            /*
+            if(dianji(p-a, normal)>1e-5){
+                cout<<endl<<dianji(p-a, normal)<<" "<<r<<" "<<aa<<" "<<bb<<endl;
+                exit(0);
+            }
+            assert(dianji(p-a, normal)<1e-5);
+            */
             ld wu = dianji(w, u);
             ld wv = dianji(w, v);
             ld s = (uv * wv - vv * wu)/D;
+            ld t = (uv * wu - uu * wv) / D;
+//            cout<<s*u + t*v + a<<" "<<p<<endl;
             if (s < 0.0 || s > 1.0)
                 return 0;
-            ld t = (uv * wu - uu * wv) / D;
             if (t < 0.0 || (s + t) > 1.0)
                 return 0;
             return 1;    
@@ -237,13 +246,13 @@ struct Bbox{
         maxz = -INF;
     }
     Bbox(const Triangle* a){
-        minx = min(a->a.x, a->b.x, a->c.x);
-        miny = min(a->a.y, a->b.y, a->c.y);
-        minz = min(a->a.z, a->b.z, a->c.z);
+        minx = min(a->a.x, a->b.x, a->c.x)-eps;
+        miny = min(a->a.y, a->b.y, a->c.y)-eps;
+        minz = min(a->a.z, a->b.z, a->c.z)-eps;
 
-        maxx = max(a->a.x, a->b.x, a->c.x);
-        maxy = max(a->a.y, a->b.y, a->c.y);
-        maxz = max(a->a.z, a->b.z, a->c.z);
+        maxx = max(a->a.x, a->b.x, a->c.x)+eps;
+        maxy = max(a->a.y, a->b.y, a->c.y)+eps;
+        maxz = max(a->a.z, a->b.z, a->c.z)+eps;
     }
 
     Bbox& operator += (const Bbox& b){
@@ -257,6 +266,7 @@ struct Bbox{
     }
 
     int intersection(Point a, Point b, ld& t1, ld& t2){
+//        cout<<"miny "<<miny<<" maxy "<<maxy<<" "<<a.y<<endl;
         ld mintx = (minx-a.x)/b.x;
         ld maxtx = (maxx-a.x)/b.x;
         if(mintx>maxtx)swap(mintx, maxtx);
@@ -268,11 +278,19 @@ struct Bbox{
         ld mintz = (minz-a.z)/b.z;
         ld maxtz = (maxz-a.z)/b.z;
         if(mintz>maxtz)swap(mintz, maxtz);
+//        cout<<"miny "<<miny<<" maxy "<<maxy<<" "<<a.y<<endl;
+//        cout<<mintx<<" "<<minty<<" "<<mintz<<endl;
+//        cout<<maxtx<<" "<<maxty<<" "<<maxtz<<endl;
         t1 = max(mintx, minty, mintz);
         t2 = min(maxtx, maxty, maxtz);
-        return t1 < t2 && t2>eps;
+        return t1 < t2 && t2 > 0;
     }
 };
+
+ostream& operator << (ostream& a, const Bbox& b){
+    a<<"("<<b.minx<<" "<<b.maxx<<" "<<b.miny<<" "<<b.maxy<<" "<<b.minz<<" "<<b.maxz<<")";
+    return a;
+}
 
 struct KDNode{
     KDNode *lc, *rc;
@@ -295,11 +313,11 @@ class KDtree{
     }
 
     KDNode* split(vector<Triangle*>& tris, int depth){
-        KDNode* u = new KDNode();
         if(tris.size() == 0)
-            return u;
+            return 0;
+        KDNode* u = new KDNode();
+        u->bbox = Bbox( tris[0] );
         if(tris.size() == 1){
-            u->bbox = Bbox( tris[0] );
             u->tri = tris[0];
             return u;
         }
@@ -328,9 +346,8 @@ class KDtree{
         return u;
     }
 
-    int hit(KDNode* u, const Point& a, const Point& b, ld& p, Triangle* &obj){
-        ld t1=-1, t2=1;
-        if(!u->bbox.intersection(a, b, t1, t2) || t2 < eps)
+    int brutehit(KDNode* u, const Point& a, const Point& b, ld& p, Triangle* &obj){
+        if(!u)
             return 0;
         if(u->tri!=0){
             ld r;
@@ -342,9 +359,35 @@ class KDtree{
             }
             return 1;
         }
+        return brutehit(u->lc, a, b, p, obj) | brutehit(u->rc, a, b, p, obj);
+    }
+
+    int hit(KDNode* u, const Point& a, const Point& b, ld& p, Triangle* &obj){
+        ld t1=-1, t2=-1;
+        if(!u->bbox.intersection(a, b, t1, t2)){
+            //debug
+//            assert(brutehit(u, a, b, p, obj) == 0);
+            return 0;
+        }
+        if(u->tri!=0){
+            ld r;
+            if(!u->tri->intersection(a, b, r))
+                return 0;
+            if(r<p){
+                obj = u->tri;
+                p = r;
+            }
+            return 1;
+        }
         ld tl1, tl2, tr1, tr2;
+//        cout<<"====="<<endl;
+//        if(u->lc)cout<<u->lc->bbox<<endl;
         int flag1 = u->lc && u->lc->bbox.intersection(a, b, tl1, tl2);
+//        cout<<a+tl1 * b<<endl;
+//        cout<<a+tl2 * b<<endl;
+//        assert(u->lc ==0 || flag1 || brutehit(u->lc, a, b, p, obj) == 0);
         int flag2 = u->rc && u->rc->bbox.intersection(a, b, tr1, tr2);
+//        assert(u->rc ==0 || flag2 || brutehit(u->rc, a, b, p, obj) == 0);
         Triangle* aim;
         int ans = 0;
         if(tl1 < tr1 || !flag2){
@@ -378,11 +421,30 @@ public:
         }
         Point a = ray.first;
         Point b = (ray.second - ray.first).normalize();
-        ld r;
-        Triangle* t;
+        ld r = INF;
+        Triangle* t=0;
+
+        /*
+        for(int i = 0;i<tris.size();++i){
+            ld r2;
+            if(tris[i]->intersection(a, b, r2)){
+                if(r2<r){
+                    r = r2;
+                    t = tris[i];
+                }
+            }
+        }
+        */
+
         if(!hit(root, a, b, r, t))
             return 0;
-        if(r>d)
+        /*
+        ld r1=INF;
+        Triangle* t1=0;
+        int flag = hit(root, a, b, r1, t1);
+        assert(abs(max(r, 0.)-max(r1, 0.))<eps);
+        */
+        if(r>d || t==0)
             return 0;
         surface = t;
         d = r;

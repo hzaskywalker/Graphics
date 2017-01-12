@@ -28,19 +28,10 @@ public:
         }
     }
 
-    void addObjObj(ObjObj* ans){
-        for(int i = 0;i<ans->faces.size();++i){
-            Point a = ans->pts[ans->faces[i][0]];
-            Point b = ans->pts[ans->faces[i][1]];
-            Point c = ans->pts[ans->faces[i][2]];
-            addTriangle(new Triangle(a, b, c));
-        }
-    }
-
     int findIntersection(Line ray, Point& interp, Object* & surface, double d = INF){
         Point tmp;
         int find = 0;
-        kdtree.intersection(ray, interp, surface, d);
+        find = kdtree.intersection(ray, interp, surface, d);
         for(vector<Object*>::iterator it=objs.begin();it!=objs.end();++it){
             if((*it)->intersection(ray, tmp)){
                 double val = dist(ray.first, tmp);
@@ -140,6 +131,7 @@ public:
             wr += obj->transmit_value * (1-kt);
             wt *= kt;
         }
+
         if( wr > eps ){
             color += rayTrace(make_pair(p, p + reflectRay), depth + 1, weight * wr, eta1) * wr;
             ll += localLight(reflectRay, p, 1) * wr;

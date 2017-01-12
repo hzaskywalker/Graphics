@@ -53,18 +53,19 @@ class ObjObj{
                 int c = faces[i][2];
                 if(pts[a].y == maxy || pts[b].y == maxy || pts[c].y==maxy){
                     Point n = chaji(pts[b] - pts[a], pts[c] - pts[a]);
-                    if(dianji(n, Point(0, 1, 0))<0)
+                    if(dianji(n, Point(0, 1, 0))<0){
                         flag = 1;
-                    break;
+                        break;
+                    }
                 }
             }
             if(flag){
                 for(int i = 0;i<faces.size();++i)
-                    swap(faces[i][2], faces[i][3]);
+                    swap(faces[i][1], faces[i][2]);
             }
         }
 
-        ObjObj(vector<Point> _pts, vector< vector<int> > _faces){
+        ObjObj(vector<Point> _pts, vector<vector<int> > _faces){
             pts = _pts;
             faces = _faces;
         }

@@ -30,7 +30,7 @@ void makeObject(Render& home){
         new Ball(Point(0, t6 + delta, 0), t6, 0., Color(0, 0, 1.)),
     };
 
-    home.addObj(c);
+    //home.addObj(c);
     home.addObj(d);
     for(int i = 0;i<6;++i){
         all[i]->set_reflect_value(0);
@@ -57,6 +57,22 @@ void makeEnvironment2(Render& home){
             Point(-L, H, D + L/2),
             Point(L, H, D - L/2));
     rec->light = Color(30, 30, 30);
+    ObjObj* ans = new ObjObj("objs/fixed.perfect.dragon.100K.0.07.obj");
+    ans->locate(600, -200, -500, 800);
+
+    for(int i = 0;i<ans->faces.size();++i){
+        Point a = ans->pts[ans->faces[i][0]];
+        Point b = ans->pts[ans->faces[i][1]];
+        Point c = ans->pts[ans->faces[i][2]];
+        //swap(a.x, a.z);
+        //swap(b.x, b.z);
+        //swap(c.x, c.z);
+        Triangle* t = new Triangle(a, b, c);
+        t->set_diffuse_value(1.);
+        t->set_color(Point(0.75, 1, 0.75));
+        home.addTriangle(t);
+    }
+
     home.addObj(rec);
     home.addLight(rec);
 }
