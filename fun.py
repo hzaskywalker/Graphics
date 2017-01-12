@@ -9,7 +9,7 @@ def name(i):
     return '{}_{}'.format(i, haha)
 
 def work(i):
-    os.system('./main 1 {} {} 1024 1024'.format(name(i), i))
+    os.system('./main 100 {} {} 1024 1024'.format(name(i), i))
     
 
 num = 40
