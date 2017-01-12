@@ -135,4 +135,208 @@ public:
     }
 
 };
+
+class Triangle: public Object{
+    public:
+        Point a, b, c, u, v, n;
+        Point normal, color, mid;
+        ld uu, vv, uv, D;
+
+        Triangle( const Point& _a, const Point& _b, const Point& _c):a(_a), b(_b), c(_c){
+            mid = (a+b+c)/3;
+            u = b-a;
+            v = c-a;
+            normal = chaji(u, v);
+            uu= dianji(u, u);
+            vv= dianji(v, v);
+            uv= dianji(u, v);
+            D = uv * uv - uu * vv;
+        }
+
+        Point calc_norm(const Line& ray, const Point& interp) const{
+            return normal;
+        }
+
+        Color local(const Point& point) const{
+            return color;
+        }
+
+        Point getMid() const{
+            return mid;
+        }
+
+        int intersection(const Point& s0, const Point& dir, ld& r){
+            //http://geomalgorithms.com/a06-_intersect-2.html#intersect3D_RayTriangle()
+            Point w0 = s0 - a;
+            ld aa = -dianji(normal, w0);
+            ld bb = dianji(normal, dir);
+            if(abs(bb)<eps){
+                assert(abs(aa)>eps);
+                return 0;
+            }
+            r = aa/bb;
+            if(r<0)
+                return 0;
+            Point p = s0 + r * dir;
+            Point w = p-s0;
+            ld wu = dianji(w, u);
+            ld wv = dianji(w, v);
+            ld s = (uv * wv - vv * wu)/D;
+            if (s < 0.0 || s > 1.0)
+                return 0;
+            ld t = (uv * wu - uu * wv) / D;
+            if (t < 0.0 || (s + t) > 1.0)
+                return 0;
+            return 1;    
+        }
+};
+
+struct Bbox{
+    ld minx, miny, minz;
+    ld maxx, maxy, maxz;
+
+    ld min(const ld& a, const ld& b){
+        return a<b?a:b;
+    }
+
+    ld max(const ld& a, const ld& b){
+        return a>b?a:b;
+    }
+
+    ld min(const ld& a, const ld& b, const ld& c){
+        return min( min(a, b), c );
+    }
+
+    ld max(const ld& a, const ld& b, const ld& c){
+        return max( max(a, b), c );
+    }
+
+    Bbox(){
+        minx = INF;
+        miny = INF;
+        minz = INF;
+
+        maxx = -INF;
+        maxy = -INF;
+        maxz = -INF;
+    }
+    Bbox(const Triangle* a){
+        minx = min(a->a.x, a->b.x, a->c.x);
+        miny = min(a->a.y, a->b.y, a->c.y);
+        minz = min(a->a.z, a->b.z, a->c.z);
+
+        maxx = max(a->a.x, a->b.x, a->c.x);
+        maxy = max(a->a.y, a->b.y, a->c.y);
+        maxz = max(a->a.z, a->b.z, a->c.z);
+    }
+
+    Bbox& operator += (const Bbox& b){
+        minx = min(minx, b.minx);
+        miny = min(miny, b.miny);
+        minz = min(minz, b.minz);
+        maxx = max(maxx, b.maxx);
+        maxy = max(maxy, b.maxy);
+        maxz = max(maxz, b.maxz);
+        return *this;
+    }
+
+    int intersection(Point a, Point b, ld& t1, ld& t2){
+        ld mintx = (minx-a.x)/b.x;
+        ld maxtx = (maxx-a.x)/b.x;
+        if(mintx>maxtx)swap(mintx, maxtx);
+
+        ld minty = (miny-a.y)/b.y;
+        ld maxty = (maxy-a.y)/b.y;
+        if(minty>maxty)swap(minty, maxty);
+
+        ld mintz = (minz-a.z)/b.z;
+        ld maxtz = (maxz-a.z)/b.z;
+        if(mintz>maxtz)swap(mintz, maxtz);
+        t1 = max(mintx, minty, mintz);
+        t2 = min(maxtx, maxty, maxtz);
+        return t1 < t2 && t2>eps;
+    }
+};
+
+struct KDNode{
+    KDNode *lc, *rc;
+    Bbox bbox;
+    Triangle* tri;
+    KDNode(){
+        lc = rc = 0;
+        tri = 0;
+    }
+};
+
+class KDtree:public Object{
+    vector<Triangle*> tris;
+
+    KDNode* split(vector<Triangle*>& tris, int depth){
+        KDNode* u = new KDNode();
+        if(tris.size() == 0)
+            return u;
+        if(tris.size() == 1){
+            u->bbox = Bbox( tris[0] );
+            u->tri = tris[0];
+            return u;
+        }
+        Point mid;
+        for(int i = 0;i<tris.size();++i){
+            mid += tris[i]->getMid();
+        }
+        mid/=tris.size();
+        vector<Triangle*> left, right;
+        for(int i =0;i<tris.size();++i){
+            int flag;
+            if(depth == 0)
+                flag = tris[i]->getMid().x<mid.x;
+            else if(depth == 1)
+                flag = tris[i]->getMid().y<mid.y;
+            else
+                flag = tris[i]->getMid().z<mid.z;
+            if(flag)
+                left.push_back(tris[i]);
+            else right.push_back(tris[i]);
+        }
+        u->lc = split(left, (depth+1)%3);
+        u->rc = split(right, (depth+1)%3);
+        if(u->lc)u->bbox += u->lc->bbox;
+        if(u->rc)u->bbox += u->rc->bbox;
+        return u;
+    }
+
+    int hit(KDNode* u, const Point& a, const Point& b, ld& p, Triangle* &obj){
+        ld t1=-1, t2=1;
+        if(!u->bbox.intersection(a, b, t1, t2) || t2 < eps)
+            return 0;
+        if(u->tri!=0){
+            ld r;
+            if(!u->tri->intersection(a, b, r))
+                return 0;
+            if(r<p){
+                obj = u->tri;
+                p = r;
+            }
+            return 1;
+        }
+        ld tl1, tl2, tr1, tr2;
+        int flag1 = u->lc && u->lc->bbox.intersection(a, b, tl1, tl2);
+        int flag2 = u->rc && u->rc->bbox.intersection(a, b, tr1, tr2);
+        Triangle* aim;
+        int ans = 0;
+        if(tl1 < tr1){
+            if(flag1)
+                ans|=hit(u->lc, a, b, p, obj);
+            if(flag2 && ( obj==0 || p > tr1 ))
+                ans|=hit(u->rc, a, b, p, obj);
+        }
+        else{
+            if(flag2)
+                ans|=hit(u->rc, a, b, p, obj);
+            if(flag1 && ( obj==0 || p > tl1 ))
+                ans|=hit(u->lc, a, b, p, obj);
+        }
+        return ans;
+    }
+};
 #endif

@@ -9,13 +9,13 @@ void makeObject(Render& home){
     ld t6 = 1e6;
     ld delta = 1000;
 
-    Ball* c = new Ball(Point(-200, -100, 700), 100, 2.);
+    Ball* c = new Ball(Point(-200, 400, 500), 300, 2.);
     c->set_reflect_value(1.);
     c->set_transmit_val(0.);
     c->set_color(Color(1., 1., 1.));
     c->set_diffuse_value(0);
 
-    Ball* d = new Ball(Point(200, -700, 800), 300, 2.);
+    Ball* d = new Ball(Point(200, -600, 600), 500, 0.9);
     d->set_reflect_value(0);
     d->set_transmit_val(1.);
     d->set_color(Color(1., 1., 1.));
@@ -79,6 +79,7 @@ int main(int argc, char* argv[]){
         width = atoi(argv[4]);
         height = atoi(argv[5]);
     }
+    cout<<width<<" "<<height<<endl;
     Render task;
     Camera camera(Point(-400, 400, 500), Point(400, -400, 500), width, height);
     makeEnvironment2(task);
