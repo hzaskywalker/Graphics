@@ -9,7 +9,7 @@ def name(i):
     return '{}_{}'.format(i, haha)
 
 def work(i):
-    os.system('./main 100 {} {} 1024 1024'.format(name(i), i))
+    os.system('./main 200 {} {} 1024 1024'.format(name(i), i))
     
 
 num = 40
@@ -27,6 +27,6 @@ for i in range(num):
     print(img.shape)
     imgs.append(img.transpose(1, 0, 2))
     os.system('rm {}'.format(name(i)))
-    os.system('rm {}.txt'.format(name(i)))
+    #os.system('rm {}.txt'.format(name(i)))
 img = np.mean(imgs, axis = 0)
 cv2.imwrite(haha, np.minimum(img, 255).astype(np.uint8))

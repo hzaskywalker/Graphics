@@ -35,7 +35,7 @@ class Camera{
 
                     for(int k = 0;k<n;++k){
                         double t = erand() * 2 * M_PI;
-                        double r = erand() * 2;
+                        double r = erand() * 0.2;
                         Point direction = startRay(i + 0.5 + r*cos(t), j + 0.5 + r*sin(t), w, h).normalize();
                         Point p = O+direction;
                         color += home.rayTrace(make_pair(p-direction, p), 0, 1., 1.);
