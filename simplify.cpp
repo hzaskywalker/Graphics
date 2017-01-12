@@ -123,7 +123,7 @@ class Simplify{
                         if(r->t == now->t){
                             for(int j = 0;j<faceEdges[v].size();++j)
                                 faceEdges[v][j]->t = nodes + faces[v][(j + 1)%faces[v].size()];
-                            std::reverse(faces[v].begin(), faces[v].end());
+                            std::reverse(faces[v].begin()+1, faces[v].end());
                             std::reverse(faceEdges[v].begin(), faceEdges[v].end());
                         }
                     }
@@ -390,9 +390,9 @@ class Simplify{
 };
 
 int main(){
-    ObjObj a = ObjObj("objs/cat/cat.obj");
-    Simplify t(a.pts, a.faces, 0.1);
+    ObjObj a = ObjObj("tmp2.obj");
+    Simplify t(a.pts, a.faces, 1);
     t.output(a.pts, a.faces);
-    a.output("tmp.obj");
+    a.output("tmp2.obj");
     return 0;
 }
