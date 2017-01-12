@@ -1,39 +1,48 @@
-#include<opencv2/opencv.hpp>
 #include <algorithm>
 #include <queue>
+#include <cstring>
+#include <cstdlib>
+#include <map>
+#include <set>
 #include "objReader.cpp"
 #include <vector>
 #include "assert.h"
 
-double calcE(const Point& v, const Matrix& Q){
-    return (v.getMatrix(1) * Q * v.getMatrix(3))[0][0];
+double calcE(const Point& v, ld Q[16]){
+    return (v.x * Q[0] + v.y * Q[4] + v.z * Q[8] + Q[12])*v.x
+        +(v.x * Q[1] + v.y * Q[5] + v.z * Q[9] + Q[13])*v.y
+        +(v.x * Q[2] + v.y * Q[6] + v.z * Q[10] + Q[14])*v.z
+        +(v.x * Q[3] + v.y * Q[7] + v.z * Q[11] + Q[15]);
 }
 
-Point solveV(const Matrix& Q, const Point& a, const Point& b){
-    Point v = (a+b)/2;
-
-    ld va = calcE(a, Q);
-    ld vb = calcE(a, Q);
-    ld vv = calcE(v, Q);
-    if(va<vb && va<vv)
-        return a;
-    if(vb < vv)
-        return b;
-    return v;
+void solveV(ld P[16], Point& v, const Point& a, const Point& b){
+    ld tmp;
+    ld Q[16];
+    memcpy(Q, P, sizeof Q);
+    if(fabs(Q[0])>eps){
+        tmp = Q[4]/Q[0];
+        if(fabs(tmp)>eps){Q[4] -= tmp * Q[0];Q[5] -= tmp * Q[1];Q[6] -= tmp * Q[2];Q[7] -= tmp * Q[3];}
+        tmp = Q[8]/Q[0];
+        if(fabs(tmp)>eps){Q[8] -= tmp * Q[0];Q[9] -= tmp * Q[1];Q[10] -= tmp * Q[2];Q[11] -= tmp * Q[3];}
+    }
+    if(Q[1]){
+        tmp = Q[9]/Q[5];
+        if(fabs(tmp)>eps){Q[8] -= tmp * Q[4];Q[9] -= tmp * Q[5];Q[10] -= tmp * Q[6];Q[11] -= tmp * Q[7];}
+    }
+    if(fabs(Q[10])>eps)v.z = -Q[11]/(Q[10]);else v.z = (a.z+b.z)/2;
+    if(fabs(Q[5])>eps)v.y = (-Q[7]-(Q[6] * v.z))/Q[5];else v.z = (a.y+b.y)/2;
+    if(fabs(Q[0])>eps)v.x = (-Q[3]-(Q[2] * v.z + Q[1] * v.y))/Q[0];else v.x = (a.x+b.x)/2;
 }
 
 struct Edge;
 
 struct Node{
-    Matrix Q;
+    ld Q[16];
     Point pts;
     Edge* begin;
-    double E;
-    int del;
     Node(){
-        Q = buildMatrix(4, 4);
+        memset(Q, 0, sizeof Q);
         begin = 0;
-        del = 0;
     }
 };
 
@@ -43,7 +52,7 @@ struct Edge{
     double E;
     Node* t;
     Point v;
-    Matrix Q;
+    ld Q[16];
     int face, used, fix;
     Edge(){
         next =rev = 0;
@@ -51,9 +60,13 @@ struct Edge{
         face = -1;
         fix = 0;
     }
+
+    void add(ld Q1[16], ld Q2[16]){
+        for(int i = 0;i<16;++i)Q[i] = Q1[i] + Q2[i];
+    }
     void update(){
-        Q = t->Q + rev->t->Q;
-        v = solveV(Q, t->pts, rev->t->pts);
+        add(t->Q, rev->t->Q);
+        solveV(Q, v, t->pts, rev->t->pts);
         E = calcE(v, Q);
     }
 };
@@ -74,17 +87,6 @@ class Simplify{
     }
 
 
-    Matrix planeFunction(Point a, Point b, Point c){
-        Point n = chaji(b-a, c-a);
-        n.normalize();
-        Matrix d = buildMatrix(4, 1);
-        d[0][0] = n.x;
-        d[1][0] = n.y;
-        d[2][0] = n.z;
-        d[3][0] = -n.x*a.x - n.y *a.y - n.z*a.z;
-        return d;
-    }
-
     void bfs(){
         numFace = 0;
         for(int s =0;s<faces.size();++s){
@@ -101,7 +103,6 @@ class Simplify{
                 que.pop();
 
                 vector<Edge*>& uedge = faceEdges[u];
-                assert(uedge.size()==3);
                 for(int i = 0;i<uedge.size();++i){
                     Edge* now = uedge[i];
                     uedge[(i+1)%uedge.size()]->next = now;
@@ -113,7 +114,6 @@ class Simplify{
 
                         for(int i = 0;i<faceEdges[v].size();++i)
                             faceEdges[v][i]->used = 1;
-                        assert(r->used == 1);
                         if(r->t == now->t){
                             for(int j = 0;j<faceEdges[v].size();++j)
                                 faceEdges[v][j]->t = nodes + faces[v][(j + 1)%faces[v].size()];
@@ -122,10 +122,8 @@ class Simplify{
                         }
                     }
                     else{
-                        assert(r->rev == now);
                         if(r->t == now->t || r->t == 0){
                             r->used = 1;
-                            assert(r->face == -1);
                             r->t = uedge[(i+1+uedge.size())%uedge.size()]->t;
                         }
                     }
@@ -161,7 +159,6 @@ class Simplify{
                     p=++totE;
                     aim = p*2 - 2;
                 }
-                assert(edges[aim].face==-1);
                 edges[aim].face = i;
                 edges[aim].t = nodes + faces[i][j];
                 tmp.push_back(edges + aim);
@@ -175,32 +172,22 @@ class Simplify{
         }
         bfs();
         for(int i = 0;i<faces.size();++i){
-            Matrix p = planeFunction(
-                    pts[faces[i][0]], 
-                    pts[faces[i][1]], 
-                    pts[faces[i][2]]);
-            Matrix K = p*transpose(p);
-            for(vector<int>::iterator it = faces[i].begin();it!=faces[i].end();++it){
-                nodes[*it].Q = nodes[*it].Q + K;
-            }
-            //for debug
-            if(1){
-                for(int j = 0;j<3;++j){
-                    assert(faceEdges[i][j]->t == nodes + faces[i][j]);
-                    assert(faceEdges[i][j]->rev->t == nodes + faces[i][(j+1)%3]);
-                }
-            }
-        }
 
-        for(int i = 0;i<pts.size();++i){
-            nodes[i].pts = pts[i];
-            nodes[i].E = calcE(pts[i], nodes[i].Q);
+            Point& a = pts[faces[i][0]];
+            Point n = chaji(pts[faces[i][1]]-a, pts[faces[i][2]]-a).normalize();
+            ld x = n.x, y = n.y, z = n.z, w = -n.x*a.x - n.y *a.y - n.z*a.z;
+            ld Q[16] = {x*x, x*y, x*z, x*w,y*x, y*y, y*z, y*w,z*x, z*y, z*z, z*w, w*x, w*y, w*z, w*w};
+            for(int j =0;j<3;++j){
+                ld* t = nodes[faces[i][j]].Q;
+                for(int i = 0;i<16;++i)
+                    t[i] += Q[i]; 
+            }
         }
+        for(int i = 0;i<pts.size();++i)
+            nodes[i].pts = pts[i];
     }
 
     void link(Edge* a, Edge* b){
-        assert(a->rev!=0);
-        assert(b->rev!=0);
         a->rev = b;
         b->rev = a;
         a->hold = a;
@@ -221,9 +208,6 @@ class Simplify{
         }
         Edge* i = e->begin;
         while(i){
-            assert(i->rev);
-            assert(i->t == e);
-            assert(i->rev->t != newa);
             i->t = newa;
 
             Edge* p = i->hold;
@@ -246,8 +230,6 @@ class Simplify{
         Edge* i;
         for(i = edges;;i++){
             num += 1;
-            //if(i-edges == 11441)
-                //cout<<i->t-nodes<<" "<<i->next->rev->t-nodes<<" "<<i-edges<<" "<<i->next->rev-edges<<endl;
             if(i->rev == 0)
                 break;
             i->ne = i->t->begin; i->t->begin = i;
@@ -258,9 +240,10 @@ class Simplify{
         }
         int need = (1. - rate) * numFace/2;
         set<int> tt;
+        int maxHeap = 0;
         while(need-- && !heap.empty()){
-            //dd.clear();
             pair<double, Edge*> tmp;
+            maxHeap = max(maxHeap, (int)heap.size());
             while(!heap.empty()){
                 tmp = *heap.begin();
                 heap.erase(tmp);
@@ -269,7 +252,6 @@ class Simplify{
                 }
             }
             Edge* i = tmp.second;
-            assert(i->rev!=0);
             Node* b = i->t;
             Node* a = i->rev->t;
             Edge* j;
@@ -300,9 +282,8 @@ class Simplify{
                 continue;
             }
             b->pts = i->v;
-            b->Q = i->Q;
+            memcpy(b->Q, i->Q, sizeof b->Q);
 
-            assert(a!=b);
             deleteEdge(i->rev);
             deleteEdge(i);
             i->rev->rev = 0;
@@ -310,19 +291,10 @@ class Simplify{
 
             Edge* p = update(b, b);
             update(a, b);
-            a->del = 1;
-            if(p){
-                assert(p->ne == 0);
+            if(p)
                 p->ne = a->begin;
-            }
-            
-            /*
-            Node* dd = nodes + 282;
-                for(Edge* t = dd->begin;t;t=t->ne){
-                    cout<<t-edges<<" ";}
-                cout<<endl;
-                */
         }
+        cout<<"maxHeap size "<<maxHeap<<endl;
     }
 
     void outputAll(vector<Point>& pts, vector< vector<int> >& faces){
@@ -383,10 +355,15 @@ class Simplify{
         }
 };
 
-int main(){
-    ObjObj a = ObjObj("tmp2.obj");
-    Simplify t(a.pts, a.faces, 1);
+int main(int argv, char* argc[]){
+    if(argv!=4){
+        cout<<"Usage: ./simplify inp.obj rate oup.obj"<<endl;
+        exit(0);
+    }
+    ObjObj a = ObjObj(argc[1]);
+    ld rate = atof(argc[2]);
+    Simplify t(a.pts, a.faces, rate);
     t.output(a.pts, a.faces);
-    a.output("tmp2.obj");
+    a.output(argc[3]);
     return 0;
 }
