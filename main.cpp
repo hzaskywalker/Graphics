@@ -15,7 +15,7 @@ void makeObject(Render& home){
     c->set_color(Color(1., 1., 1.));
     c->set_diffuse_value(0);
 
-    Ball* d = new Ball(Point(200, -400, 400), 400, 1.9);
+    Ball* d = new Ball(Point(200, -400, 400), 400, 1.3);
     d->set_reflect_value(0);
     d->set_transmit_val(1.);
     d->set_color(Color(1., 1., 1.));
@@ -30,7 +30,7 @@ void makeObject(Render& home){
         new Ball(Point(0, t6 + delta, 0), t6, 0., Color(0, 0, 1.)),
     };
 
-    //home.addObj(c);
+    home.addObj(c);
     home.addObj(d);
     for(int i = 0;i<6;++i){
         all[i]->set_reflect_value(0);
