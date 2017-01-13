@@ -9,25 +9,25 @@ void makeObject(Render& home){
     ld t6 = 1e6;
     ld delta = 1000;
 
-    Ball* c = new Ball(Point(-200, 400, 500), 300, 2.);
+    Ball* c = new Ball(Point(400, 400, 300), 100, 2.);
     c->set_reflect_value(1.);
     c->set_transmit_val(0.);
     c->set_color(Color(1., 1., 1.));
     c->set_diffuse_value(0);
 
-    Ball* d = new Ball(Point(200, -400, 400), 400, 1.3);
+    Ball* d = new Ball(Point(200, -300, 0), 400, 2);
     d->set_reflect_value(0);
     d->set_transmit_val(1.);
     d->set_color(Color(1., 1., 1.));
     d->set_diffuse_value(0);
 
     Ball* all[] = {
-        new Ball(Point(0, 0, t6 + delta), t6, 0., Color(0.75, 0.75, 0.25)),
-        new Ball(Point(0, 0, -t6 - delta), t6, 0., Color(0.25, 0.25, 0.75)),
-        new Ball(Point(t6 + delta, 0, 0), t6, 0., Color(0.25, 0.75, 0.25)),
-        new Ball(Point(-t6 -delta, 0, 0), t6, 0., Color(0.75, 0.25, 0.25)),
+        new Ball(Point(0, 0, t6 + delta), t6, 0., Color(0.75, 0.75, 0.75)),
+        new Ball(Point(0, 0, -t6 - delta), t6, 0., Color(0.25, 0.25, 0.25)),
+        new Ball(Point(t6 + delta, 0, 0), t6, 0., Color(0.25, 0.25, 0.75)),
+        new Ball(Point(-t6 -delta, 0, 0), t6, 0., Color(0.25, 0.75, 0.25)),
         new Ball(Point(0, -t6 - delta, 0), t6, 0., Color(0.75, 0.75, 0.75)),
-        new Ball(Point(0, t6 + delta, 0), t6, 0., Color(0, 0, 1.)),
+        new Ball(Point(0, t6 + delta, 0), t6, 0., Color(0.75, 0.75, 0.75)),
     };
 
     home.addObj(c);
@@ -49,7 +49,7 @@ void makeEnvironment(Render& home){
 
 void makeEnvironment2(Render& home){
     makeObject(home);
-    ld L = 400;
+    ld L = 500;
     ld H = 999;
     ld D = 500;
     Rectangle* rec = new Rectangle(
@@ -58,7 +58,7 @@ void makeEnvironment2(Render& home){
             Point(L, H, D - L/2));
     rec->light = Color(30, 30, 30);
     ObjObj* ans = new ObjObj("objs/fixed.perfect.dragon.100K.0.07.obj");
-    ans->locate(600, -200, -500, 800);
+    ans->locate(600, -200, -500, 700);
 
     for(int i = 0;i<ans->faces.size();++i){
         Point a = ans->pts[ans->faces[i][0]];
@@ -68,8 +68,11 @@ void makeEnvironment2(Render& home){
         //swap(b.x, b.z);
         //swap(c.x, c.z);
         Triangle* t = new Triangle(a, b, c);
-        t->set_diffuse_value(1.);
-        t->set_color(Point(0.75, 1, 0.75));
+        t->set_diffuse_value(0.);
+        t->set_reflect_value(0.);
+        t->set_transmit_val(1.);
+        t->set_eta2(2.);
+        t->set_color(Point(0.5, 0.75, 0.75));
         home.addTriangle(t);
     }
 
@@ -98,6 +101,7 @@ int main(int argc, char* argv[]){
     cout<<width<<" "<<height<<endl;
     Render task;
     Camera camera(Point(-400, 400, 500), Point(400, -400, 500), width, height);
+//    Camera camera(Point(-100, 0, 500), Point(200, -300, 500), width, height);
     makeEnvironment2(task);
     cv::Mat result = camera.render(Point(0,0,-1000), task, 5, n, p);
     return 0;

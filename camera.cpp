@@ -1,4 +1,5 @@
 #include<opencv2/opencv.hpp>
+#include <ctime>
 #include <iomanip> 
 #include<fstream>
 #include "basic.cpp"
@@ -27,15 +28,16 @@ class Camera{
             int num = 0, tot = w*h;
             cout<<"begin render"<<endl;
             ofstream fout((string(imgname) + string(".txt")).c_str());
+            clock_t begin = clock();
             for(int i = 0; i<w; ++i){
                 for(int j = 0; j<h; ++j){
-                    cout<<"\b\r"<<((double)num)/tot * 100;
+                    cout<<"\b\r"<<((double)num)/tot * 100<<" "<<tot/(double)num * (clock() - begin)/CLOCKS_PER_SEC;
                     num += 1;
                     Color color;
 
                     for(int k = 0;k<n;++k){
                         double t = erand() * 2 * M_PI;
-                        double r = erand() * 2;
+                        double r = erand() * 0.2;
                         Point direction = startRay(i + 0.5 + r*cos(t), j + 0.5 + r*sin(t), w, h).normalize();
                         Point p = O+direction;
                         color += home.rayTrace(make_pair(p-direction, p), 0, 1., 1.);

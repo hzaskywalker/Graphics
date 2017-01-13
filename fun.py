@@ -27,6 +27,6 @@ for i in range(num):
     print(img.shape)
     imgs.append(img.transpose(1, 0, 2))
     os.system('rm {}'.format(name(i)))
-    os.system('rm {}.txt'.format(name(i)))
+    #os.system('rm {}.txt'.format(name(i)))
 img = np.mean(imgs, axis = 0)
 cv2.imwrite(haha, np.minimum(img, 255).astype(np.uint8))
