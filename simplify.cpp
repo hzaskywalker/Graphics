@@ -194,12 +194,13 @@ class Simplify{
         b->hold = a;
     }
 
-    void deleteEdge(Edge* i){
+    int deleteEdge(Edge* i){
         if(i->face==-1)
-            return;
+            return 0;
         link(i->next->rev, i->next->next->rev);
         i->next->rev = 0;
         i->next->next->rev = 0;
+        return 1;
     }
 
     Edge* update(Node* e, Node* newa){
@@ -238,10 +239,11 @@ class Simplify{
             i->update();
             heap.insert(make_pair(i->E, i));
         }
-        int need = (1. - rate) * numFace/2;
+        int need = (1. - rate) * numFace;
         set<int> tt;
         int maxHeap = 0;
-        while(need-- && !heap.empty()){
+        cout<<need<<endl;
+        while(need && !heap.empty()){
             pair<double, Edge*> tmp;
             maxHeap = max(maxHeap, (int)heap.size());
             while(!heap.empty()){
@@ -278,14 +280,13 @@ class Simplify{
                 i->fix = 1;
             }
             if(i->fix){
-                need++;
                 continue;
             }
             b->pts = i->v;
             memcpy(b->Q, i->Q, sizeof b->Q);
 
-            deleteEdge(i->rev);
-            deleteEdge(i);
+            need -= deleteEdge(i->rev);
+            need -= deleteEdge(i);
             i->rev->rev = 0;
             i->rev = 0;
 
