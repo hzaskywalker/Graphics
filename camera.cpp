@@ -1,4 +1,5 @@
 #include<opencv2/opencv.hpp>
+#include <ctime>
 #include <iomanip> 
 #include<fstream>
 #include "basic.cpp"
@@ -27,9 +28,10 @@ class Camera{
             int num = 0, tot = w*h;
             cout<<"begin render"<<endl;
             ofstream fout((string(imgname) + string(".txt")).c_str());
+            clock_t begin = clock();
             for(int i = 0; i<w; ++i){
                 for(int j = 0; j<h; ++j){
-                    cout<<"\b\r"<<((double)num)/tot * 100;
+                    cout<<"\b\r"<<((double)num)/tot * 100<<" "<<tot/(double)num * (clock() - begin)/CLOCKS_PER_SEC;
                     num += 1;
                     Color color;
 
