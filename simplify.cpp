@@ -242,17 +242,20 @@ class Simplify{
         int need = (1. - rate) * numFace;
         set<int> tt;
         int maxHeap = 0;
-        cout<<need<<endl;
-        while(need && !heap.empty()){
+        while(need>=0 && !heap.empty()){
             pair<double, Edge*> tmp;
             maxHeap = max(maxHeap, (int)heap.size());
+            int flag = 0;
             while(!heap.empty()){
                 tmp = *heap.begin();
                 heap.erase(tmp);
                 if(tmp.first == tmp.second->E && tmp.second->rev && tmp.second->hold == tmp.second){
+                    flag = 1;
                     break;
                 }
             }
+            if(!flag)
+                break;
             Edge* i = tmp.second;
             Node* b = i->t;
             Node* a = i->rev->t;
