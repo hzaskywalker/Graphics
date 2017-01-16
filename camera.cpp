@@ -23,7 +23,7 @@ class Camera{
 
         cv::Mat render(Point O, Render& home, int depth = 10, int n= 1000, const char* imgname = 0){
             home.Depth = depth;
-            cv::Mat image(w, h, CV_8UC3, cv::Scalar(0, 0, 0));
+            cv::Mat image(h, w, CV_8UC3, cv::Scalar(0, 0, 0));
             cv::Mat_<cv::Vec3b> _m = image;
             int num = 0, tot = w*h;
             cout<<"begin render"<<endl;
@@ -31,20 +31,30 @@ class Camera{
             clock_t begin = clock();
             for(int i = 0; i<w; ++i){
                 for(int j = 0; j<h; ++j){
-                    cout<<"\b\r"<<((double)num)/tot * 100<<" "<<tot/(double)num * (clock() - begin)/CLOCKS_PER_SEC;
+                    cout<<"\b\r"<<((double)num)/tot * 100<<" "<<(tot-num)/(double)num * (clock() - begin)/CLOCKS_PER_SEC;
                     num += 1;
                     Color color;
 
-                    for(int k = 0;k<n;++k){
-                        double t = erand() * 2 * M_PI;
-                        double r = erand() * 0.2;
-                        Point direction = startRay(i + 0.5 + r*cos(t), j + 0.5 + r*sin(t), w, h).normalize();
-                        Point p = O+direction;
-                        color += home.rayTrace(make_pair(p-direction, p), 0, 1., 1.);
-                    }
-                    color/=n;
+                    /*
+                    if(i<670 || i>680 || j<540 || j>550)
+                        color = Color();
+                    else{
+                    */
+                        for(int k = 0;k<n;++k){
+                            for(int sx=0;sx<2;++sx )
+                                for(int sy = 0;sy<2;++sy){
+                                    double r1=2*erand(), dx=r1<1 ? sqrt(r1)-1: 1-sqrt(2-r1);
+                                    double r2=2*erand(), dy=r2<1 ? sqrt(r2)-1: 1-sqrt(2-r2);
+                                    Point direction = startRay(i + 0.5 + (sx + dx)/2, j + 0.5 + (sy+dy)/2, w, h).normalize();
+                                    Point p = O+direction;
+                                    color += home.rayTrace(make_pair(p-direction, p), 0, 1., 1.) * 0.25;
+                                }
+                        }
+                        color/=n;
 
-                    color = color*255;
+//                        cout<<"##"<<i<<" "<<j<<" "<<color<<endl;
+                        color = color*255;
+//                    }
                     if(imgname!=0)
                         fout<<std::setprecision(9)<<color.x<<" "<<color.y<<" "<<color.z<<" ";
                     color.clamp(255);

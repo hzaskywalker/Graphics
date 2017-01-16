@@ -69,17 +69,17 @@ public:
 
     ld transmit(const Point& a, const Point& n, const double& eta, Point& p){
         double c1 = dianji(a, n);
-        if(1-c1*c1>=eta*eta)
+        if(1-c1*c1>=eta*eta){
             return 0;
+        }
         double c2 = sqrt(1- (1-c1*c1)/(eta*eta));
         p = -1/eta * a - (c2 - 1/eta * c1) * n;
-
         float Rs = (c1*eta - c2) / (c1*eta + c2); 
         float Rp = (c1 - c2*eta) / (c1 + c2*eta); 
         return 1 - (Rs * Rs + Rp * Rp) / 2;
     }
 
-    Color rayTrace(Line ray, int depth, double weight, double eta1){
+    Color rayTrace(Line ray, int depth, double weight, double eta1, int out = 1){
         if(weight < 1e-10){
             return Color(0, 0, 0);
         }
@@ -96,6 +96,7 @@ public:
 
         ld t = erand();
         if(obj->isLight){
+//            cout<<"  light"<<obj->light<<" "<<p<<endl;
             return obj->light * abs( dianji(ray.first - ray.second, ((Rectangle*)obj)->normal) );
         }
         if(depth>Depth){
@@ -112,6 +113,22 @@ public:
         Color ll;
 
         double c1 = dianji(-inp, normal);
+        /*
+        if(out!=(c1>=0)){
+            cout<<"Wrong"<<endl;
+            Triangle* tt = (Triangle*)obj;
+            cout<<tt->a<<" "<<tt->b<<" "<<tt->c<<" "<<tt->normal.normalize()<<endl;
+            for(int i = 0;i<kdtree.tris.size();++i){
+                ld r1=0, r2=0;
+                if(kdtree.tris[i]->intersection(ray.first, inp, r1)){
+                    cout<<"###"<<r1<<endl;
+                }
+            }
+            cout<<depth<<" "<<out<<" "<<ray.first<<" "<<p<<" "<<inp<<endl;
+            exit(0);
+            return rayTrace(make_pair(p, p+inp), depth +1, weight, eta1, out);
+        }
+        */
         Point reflectRay = 2*c1*normal + inp, transmitRay;
 
         ld kt = 0;
@@ -122,37 +139,48 @@ public:
 
         ld wr = obj->reflect_value, wt = obj->transmit_value;
         if(depth>2){
-            if(erand() > kt){
-                wr += obj->transmit_value;
+            ld P = 0.25 + 0.5 * (1-kt);
+            if(erand() < P ){
+                wr += obj->transmit_value * (1-kt) /P;
                 wt = 0;
+            }
+            else{
+                wt = wt * kt/(1-P);
             }
         }
         else{
             wr += obj->transmit_value * (1-kt);
             wt *= kt;
         }
-
+        Point re, tr;
         if( wr > eps ){
-            color += rayTrace(make_pair(p, p + reflectRay), depth + 1, weight * wr, eta1) * wr;
-            ll += localLight(reflectRay, p, 1) * wr;
+            re = rayTrace(make_pair(p, p + reflectRay), depth + 1, weight * wr, eta1, out) * wr;
+            color += re;
+//            ll += localLight(reflectRay, p, 1) * wr;
         }
         if(obj->diffuse_value>eps){
+            out = 1;
             ld r1 = 2*M_PI * erand(), r2 = erand(), r2s = sqrt(r2);
             Point w = c1<0?-normal:normal;
-            Point u = chaji( w.x>1?Point(0, 1, 0):Point(1, 0, 0), w ).normalize();
+            Point u = chaji( fabs(w.x)>1.?Point(0, 1, 0):Point(1, 0, 0), w ).normalize();
             Point v = chaji( w, u ); 
             Ball* t = (Ball*)obj;
             Point diffuseRay = u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrt(1-r2);
-            Color haha = rayTrace(make_pair(p, p + diffuseRay.normalize()), depth + 1, weight, eta1);
+            Color haha = rayTrace(make_pair(p, p + diffuseRay.normalize()), depth + 1, weight, eta1, out);
             color +=  haha * obj->diffuse_value; 
-            ll += localLight(normal, p, 0) * obj->diffuse_value;
+//            if(depth == 0)
+//                cout<<color<<endl;
+//            ll += localLight(normal, p, 0) * obj->diffuse_value;
         }
         if(wt != 0){
-            color += rayTrace(make_pair(p, p + transmitRay), depth + 1, weight * wt, eta1) * wt;
-            if(depth == 1)
-            ll += localLight(transmitRay, p, 1) * wt;
+            tr = rayTrace(make_pair(p + transmitRay * eps, p + transmitRay), depth + 1, weight * wt, eta1, out^1) * wt;
+            color += tr;
         }
-
+        /*
+        if(color.norm()>0||depth <=2){
+            cout<<"++"<<depth<<" "<<color<<" "<<p<<" "<<tr<<" "<<re<<" "<<wr<<" "<<kt<<" "<<wt<<" "<<obj->eta2<<endl;
+        }
+        */
         return (color + ll)*f + obj->light;
     }
 

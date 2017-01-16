@@ -3,7 +3,6 @@
 #include<vector>
 #include<cmath>
 #include<iostream>
-#include "objReader.cpp"
 #include "assert.h"
 #include "basic.cpp"
 using namespace std;
@@ -147,6 +146,8 @@ class Triangle: public Object{
     public:
         Point a, b, c, u, v, n;
         Point normal, color, mid;
+        Point na, nb, nc;
+
         ld uu, vv, uv, D;
 
         int intersection(const Line& ray, Point& p) const{
@@ -158,7 +159,7 @@ class Triangle: public Object{
             p = s0 + dir * r;
             return 1;
         }
-        Triangle( const Point& _a, const Point& _b, const Point& _c):a(_a), b(_b), c(_c){
+        Triangle( const Point& _a, const Point& _b, const Point& _c, const Point& _na, const Point& _nb, const Point& _nc):a(_a), b(_b), c(_c), na(_na), nb(_nb), nc(_nc){
             mid = (a+b+c)/3;
             u = b-a;
             v = c-a;
@@ -169,8 +170,15 @@ class Triangle: public Object{
             D = uv * uv - uu * vv;
         }
 
-        Point calc_norm(const Line& ray, const Point& interp) const{
-            return normal;
+        Point calc_norm(const Line& ray, const Point& p) const{
+            Point x = a - p;
+            Point y = b - p;
+            Point z = c - p;
+
+            ld aa = chaji(y, z).norm();
+            ld bb = chaji(z, x).norm();
+            ld cc = chaji(x, y).norm();
+            return (na * aa + nb * bb + nc * cc)/(aa + bb + cc);
         }
 
         Color local(const Point& point) const{
@@ -189,11 +197,14 @@ class Triangle: public Object{
             if(abs(bb)<eps){
                 if(abs(aa)>eps)
                     return 0;
+//                cout<<r<<" "<<a<<" "<<b<<" "<<c<<" "<<normal<<" "<<dir<<endl;
                 return 0;
             }
             r = aa/bb;
-            if(r<eps)
+            if(r<eps){
+//                if(r>-eps) cout<<dianji( normal, dir)<<endl;
                 return 0;
+            }
             Point p = s0 + r * dir;
             Point w = p-a;
             /*
@@ -208,6 +219,15 @@ class Triangle: public Object{
             ld s = (uv * wv - vv * wu)/D;
             ld t = (uv * wu - uu * wv) / D;
 //            cout<<s*u + t*v + a<<" "<<p<<endl;
+//            if(s>-eps * 10 && s<1.0 + eps * 10&& t>-eps * 10&& t+s < 1.0 + eps * 10)
+//                cout<<r<<" "<<a<<" "<<b<<" "<<c<<endl;
+                /*
+            if((s>-1 &&  s<1  && t>-1 && t+s<2.) || abs(D)<1){
+                cout<<D<<endl;
+                cout<<s<<" "<<t<<" "<<a<<" "<<b<<" "<<c<<endl;
+            }
+            */
+            
             if (s < 0.0 || s > 1.0)
                 return 0;
             if (t < 0.0 || (s + t) > 1.0)
@@ -265,7 +285,7 @@ struct Bbox{
         return *this;
     }
 
-    int intersection(Point a, Point b, ld& t1, ld& t2){
+    int intersection(const Point& a, const Point& b, ld& t1, ld& t2){
 //        cout<<"miny "<<miny<<" maxy "<<maxy<<" "<<a.y<<endl;
         ld mintx = (minx-a.x)/b.x;
         ld maxtx = (maxx-a.x)/b.x;
@@ -303,6 +323,7 @@ struct KDNode{
 };
 
 class KDtree{
+    public:
     vector<Triangle*> tris;
     KDNode* root;
 
@@ -416,8 +437,11 @@ public:
     }
 
     int intersection(Line ray, Point& p, Object* &surface, ld& d){
-        if(root == 0){
+        if(tris.size() && root == 0){
             buildKDtree();
+        }
+        if(root == 0){
+            return 0;
         }
         Point a = ray.first;
         Point b = (ray.second - ray.first).normalize();
