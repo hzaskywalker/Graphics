@@ -6,6 +6,7 @@
 #include<cmath>
 typedef double ld;
 using namespace std;
+// test windows github
 
 const double INF = 1e10;
 const ld eps = 1e-3;
